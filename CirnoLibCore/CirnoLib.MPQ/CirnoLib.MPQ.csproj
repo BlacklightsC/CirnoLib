@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Platforms>x86</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <OutputPath>..\Build\Debug</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>..\Build\Debug\CirnoLib.MPQ.xml</DocumentationFile>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <OutputPath>..\Build\Release</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>..\Build\Release\CirnoLib.MPQ.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\CirnoLib.MPQ\Common.cs" Link="Common.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\CompressLib\BitBuffer.cs" Link="CompressLib\BitBuffer.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\CompressLib\BitStream.cs" Link="CompressLib\BitStream.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\CompressLib\Huffman.cs" Link="CompressLib\Huffman.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\CompressLib\IMA_ADPCM.cs" Link="CompressLib\IMA_ADPCM.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\CompressLib\PKWARE.cs" Link="CompressLib\PKWARE.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\CompressLib\ZLibHelper.cs" Link="CompressLib\ZLibHelper.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Constant.cs" Link="Constant.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\MPQArchive.cs" Link="Struct\MPQArchive.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\MPQBlock.cs" Link="Struct\MPQBlock.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\MPQBlockTable.cs" Link="Struct\MPQBlockTable.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\MPQFIle.cs" Link="Struct\MPQFIle.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\MPQFIles.cs" Link="Struct\MPQFIles.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\MPQHash.cs" Link="Struct\MPQHash.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\MPQHashTable.cs" Link="Struct\MPQHashTable.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\MPQHeader.cs" Link="Struct\MPQHeader.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\W3MArchive.cs" Link="Struct\W3MArchive.cs" />
+    <Compile Include="..\..\CirnoLib.MPQ\Struct\W3MHeader.cs" Link="Struct\W3MHeader.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpZipLib" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CirnoLib\CirnoLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="CompressLib\" />
+    <Folder Include="Struct\" />
+  </ItemGroup>
+
+</Project>

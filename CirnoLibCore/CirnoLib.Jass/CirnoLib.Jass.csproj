@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Platforms>x86</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <OutputPath>..\Build\Debug</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>..\Build\Debug\CirnoLib.Jass.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <OutputPath>..\Build\Release</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>..\Build\Release\CirnoLib.Jass.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\CirnoLib.Jass\Function.cs" Link="Function.cs" />
+    <Compile Include="..\..\CirnoLib.Jass\Hex.cs" Link="Hex.cs" />
+    <Compile Include="..\..\CirnoLib.Jass\Jass.cs" Link="Jass.cs" />
+    <Compile Include="..\..\CirnoLib.Jass\Preload.cs" Link="Preload.cs" />
+    <Compile Include="..\..\CirnoLib.Jass\PreloadFiles.cs" Link="PreloadFiles.cs" />
+    <Compile Include="..\..\CirnoLib.Jass\RawCode.cs" Link="RawCode.cs" />
+    <Compile Include="..\..\CirnoLib.Jass\StringHash.cs" Link="StringHash.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CirnoLib\CirnoLib.csproj" />
+  </ItemGroup>
+
+</Project>

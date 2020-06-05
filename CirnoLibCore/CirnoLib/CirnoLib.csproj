@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Platforms>x86</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <OutputPath>..\Build\Debug</OutputPath>
+    <DocumentationFile>..\Build\Debug\CirnoLib.xml</DocumentationFile>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <OutputPath>..\Build\Release</OutputPath>
+    <DocumentationFile>..\Build\Release\CirnoLib.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\CirnoLib\Attributes\SerialData.cs" Link="Attributes\SerialData.cs" />
+    <Compile Include="..\..\CirnoLib\ByteArrayExtension.cs" Link="ByteArrayExtension.cs" />
+    <Compile Include="..\..\CirnoLib\ByteStream.cs" Link="ByteStream.cs" />
+    <Compile Include="..\..\CirnoLib\Cryptography.cs" Link="Cryptography.cs" />
+    <Compile Include="..\..\CirnoLib\Generic.cs" Link="Generic.cs" />
+    <Compile Include="..\..\CirnoLib\Global.cs" Link="Global.cs" />
+    <Compile Include="..\..\CirnoLib\Interfaces\IArrayable.cs" Link="Interfaces\IArrayable.cs" />
+    <Compile Include="..\..\CirnoLib\Interfaces\IParsable.cs" Link="Interfaces\IParsable.cs" />
+    <Compile Include="..\..\CirnoLib\Interfaces\IStreamable.cs" Link="Interfaces\IStreamable.cs" />
+    <Compile Include="..\..\CirnoLib\ListDictionary.cs" Link="ListDictionary.cs" />
+    <Compile Include="..\..\CirnoLib\SortedListDictionary.cs" Link="SortedListDictionary.cs" />
+    <Compile Include="..\..\CirnoLib\StreamExtension.cs" Link="StreamExtension.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Attributes\" />
+  </ItemGroup>
+
+</Project>

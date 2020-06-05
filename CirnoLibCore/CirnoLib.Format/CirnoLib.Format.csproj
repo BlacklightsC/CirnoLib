@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Platforms>x86</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <OutputPath>..\Build\Debug</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>..\Build\Debug\CirnoLib.Format.xml</DocumentationFile>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <OutputPath>..\Build\Release</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>..\Build\Release\CirnoLib.Format.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\BlpJpegMipmap.cs" Link="BLPLib\BlpJpegMipmap.cs" />
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\BlpMipmap.cs" Link="BLPLib\BlpMipmap.cs" />
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\BlpPalettedMipmap.cs" Link="BLPLib\BlpPalettedMipmap.cs" />
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\BlpTexture.cs" Link="BLPLib\BlpTexture.cs" />
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\Legacy\ArgbColor.cs" Link="BLPLib\Legacy\ArgbColor.cs" />
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\Legacy\BlpTexture.cs" Link="BLPLib\Legacy\BlpTexture.cs" />
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\Legacy\JpegSurface.cs" Link="BLPLib\Legacy\JpegSurface.cs" />
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\Legacy\PaletteSurface.cs" Link="BLPLib\Legacy\PaletteSurface.cs" />
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\Legacy\Surface.cs" Link="BLPLib\Legacy\Surface.cs" />
+    <Compile Include="..\..\CirnoLib.Format\BLPLib\Legacy\SurfaceData.cs" Link="BLPLib\Legacy\SurfaceData.cs" />
+    <Compile Include="..\..\CirnoLib.Format\MDXLib\Float3.cs" Link="MDXLib\Float3.cs" />
+    <Compile Include="..\..\CirnoLib.Format\MDXLib\MDXGlobalSequenceChunk.cs" Link="MDXLib\MDXGlobalSequenceChunk.cs" />
+    <Compile Include="..\..\CirnoLib.Format\MDXLib\MDXModel.cs" Link="MDXLib\MDXModel.cs" />
+    <Compile Include="..\..\CirnoLib.Format\MDXLib\MDXModelChunk.cs" Link="MDXLib\MDXModelChunk.cs" />
+    <Compile Include="..\..\CirnoLib.Format\MDXLib\MDXSequenceChunk.cs" Link="MDXLib\MDXSequenceChunk.cs" />
+    <Compile Include="..\..\CirnoLib.Format\MDXLib\MDXTextureChunk.cs" Link="MDXLib\MDXTextureChunk.cs" />
+    <Compile Include="..\..\CirnoLib.Format\MDXLib\MDXVersionChunk.cs" Link="MDXLib\MDXVersionChunk.cs" />
+    <Compile Include="..\..\CirnoLib.Format\SLK.cs" Link="SLK.cs" />
+    <Compile Include="..\..\CirnoLib.Format\TgaReader.cs" Link="TgaReader.cs" />
+    <Compile Include="..\..\CirnoLib.Format\UnitsDoo.cs" Link="UnitsDoo.cs" />
+    <Compile Include="..\..\CirnoLib.Format\UnitsTxt.cs" Link="UnitsTxt.cs" />
+    <Compile Include="..\..\CirnoLib.Format\W3Info.cs" Link="W3Info.cs" />
+    <Compile Include="..\..\CirnoLib.Format\W3Object.cs" Link="W3Object.cs" />
+    <Compile Include="..\..\CirnoLib.Format\WTextString.cs" Link="WTextString.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CirnoLib.Jass\CirnoLib.Jass.csproj" />
+    <ProjectReference Include="..\CirnoLib\CirnoLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="BLPLib\Legacy\" />
+    <Folder Include="MDXLib\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Magick.NET-Q8-x86" Version="7.14.2" />
+    <PackageReference Include="System.Drawing.Common" Version="4.5.1" />
+  </ItemGroup>
+
+</Project>

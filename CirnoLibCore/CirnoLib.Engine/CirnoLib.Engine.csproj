@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Platforms>x86</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <OutputPath>..\Build\Debug</OutputPath>
+    <DocumentationFile>..\Build\Debug\CirnoLib.Engine.xml</DocumentationFile>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <OutputPath>..\Build\Release</OutputPath>
+    <DocumentationFile>..\Build\Release\CirnoLib.Engine.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\CirnoLib.Engine\Creator\Algorithm.cs" Link="Creator\Algorithm.cs" />
+    <Compile Include="..\..\CirnoLib.Engine\Creator\Preload.cs" Link="Creator\Preload.cs" />
+    <Compile Include="..\..\CirnoLib.Engine\Jurassic\Algorithm.cs" Link="Jurassic\Algorithm.cs" />
+    <Compile Include="..\..\CirnoLib.Engine\Maker\Algorithm.cs" Link="Maker\Algorithm.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CirnoLib.Jass\CirnoLib.Jass.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Jurassic\" />
+    <Folder Include="Creator\" />
+    <Folder Include="Maker\" />
+  </ItemGroup>
+
+</Project>
