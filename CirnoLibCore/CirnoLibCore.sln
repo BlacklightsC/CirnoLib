@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.28010.2050
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CirnoLib", "CirnoLib\CirnoLib.csproj", "{3EE0A809-4AFC-4F90-B061-9F742287DEDD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CirnoLib.Engine", "CirnoLib.Engine\CirnoLib.Engine.csproj", "{3F188B0A-02AD-4829-AD49-A373CB655719}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CirnoLib.Format", "CirnoLib.Format\CirnoLib.Format.csproj", "{5583D122-5EA3-4699-AA8C-CF19D8BCB069}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CirnoLib.Jass", "CirnoLib.Jass\CirnoLib.Jass.csproj", "{F894F7BE-6BEC-4604-973F-0EA411134AAA}"

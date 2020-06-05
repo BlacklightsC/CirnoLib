@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CirnoLib.Format", "CirnoLib
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CIrnoLib.Jass", "CirnoLib.Jass\CIrnoLib.Jass.csproj", "{BDB11D05-728E-4FE2-B22F-E8261C59F4B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CirnoLib.MPQ", "CIrnoLib.MPQ\CirnoLib.MPQ.csproj", "{66CC81D6-6995-4E70-949A-0ACB7519F871}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CirnoLib.MPQ", "CirnoLib.MPQ\CirnoLib.MPQ.csproj", "{66CC81D6-6995-4E70-949A-0ACB7519F871}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
