@@ -426,7 +426,7 @@ namespace CirnoLib
         /// <returns>지정한 문자 집합을 인코딩한 결과가 포함된 바이트 배열입니다.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="text"/>가 null인 경우</exception>
         /// <exception cref="EncoderFallbackException">대체가 발생했습니다(전체 설명은 .NET Framework의 문자 인코딩 참조). 및 <see cref="EncoderFallback"/>이 <see cref="EncoderExceptionFallback"/>로 설정됩니다.</exception>
-        public static byte[] GetBytes(this string text) => DefaultEncoding.GetBytes(text);
+        public static byte[] GetBytes(this string text) => text == null ? new byte[0] :DefaultEncoding.GetBytes(text);
         #endregion
         #region public static byte[] GetBytes(this string text, Encoding encoding)
         /// <summary>
