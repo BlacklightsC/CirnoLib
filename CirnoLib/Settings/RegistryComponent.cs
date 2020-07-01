@@ -137,7 +137,7 @@ namespace CirnoLib.Settings
         public void SetValue(string key, string name, object value)
         {
             if (string.IsNullOrEmpty(key)) RootKey.SetValue(name, value);
-            using (RegistryKey regKey = RootKey.OpenSubKey(key, false))
+            using (RegistryKey regKey = RootKey.OpenSubKey(key, true))
             {
                 if (regKey == null)
                 {
