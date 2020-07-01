@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 
 namespace CirnoLib
 {
@@ -153,31 +152,12 @@ namespace CirnoLib
             {
                 long Position = base.Position;
                 if (index >= 0) base.Position = index;
-                short value;
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(2).ReverseCopy(false);
-                    value = BitConverter.ToInt16(buffer, 0);
-                }
-                else
-                {
-                    value = Reader.ReadInt16();
-                }
+                short value = IsBigEndian ? Reader.ReadBytes(2).ReverseCopy().ToInt16() : Reader.ReadInt16();
                 base.Position = Position;
                 return value;
             }
             else
-            {
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(2).ReverseCopy(false);
-                    return BitConverter.ToInt16(buffer, 0);
-                }
-                else
-                {
-                    return Reader.ReadInt16();
-                }
-            }
+                return IsBigEndian ? Reader.ReadBytes(2).ReverseCopy().ToInt16() : Reader.ReadInt16();
         }
         public int ReadInt32(int index = -2)
         {
@@ -185,31 +165,12 @@ namespace CirnoLib
             {
                 long Position = base.Position;
                 if (index >= 0) base.Position = index;
-                int value;
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(4).ReverseCopy(false);
-                    value = BitConverter.ToInt32(buffer, 0);
-                }
-                else
-                {
-                    value = Reader.ReadInt32();
-                }
+                int value = IsBigEndian ? Reader.ReadBytes(4).ReverseCopy().ToInt32() : Reader.ReadInt32();
                 base.Position = Position;
                 return value;
             }
             else
-            {
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(4).ReverseCopy(false);
-                    return BitConverter.ToInt32(buffer, 0);
-                }
-                else
-                {
-                    return Reader.ReadInt32();
-                }
-            }
+                return IsBigEndian ? Reader.ReadBytes(4).ReverseCopy().ToInt32() : Reader.ReadInt32();
         }
         public long ReadInt64(int index = -2)
         {
@@ -217,31 +178,12 @@ namespace CirnoLib
             {
                 long Position = base.Position;
                 if (index >= 0) base.Position = index;
-                long value;
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(8).ReverseCopy(false);
-                    value = BitConverter.ToInt64(buffer, 0);
-                }
-                else
-                {
-                    value = Reader.ReadInt64();
-                }
+                long value = IsBigEndian ? Reader.ReadBytes(8).ReverseCopy().ToInt64() : Reader.ReadInt64();
                 base.Position = Position;
                 return value;
             }
             else
-            {
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(8).ReverseCopy(false);
-                    return BitConverter.ToInt64(buffer, 0);
-                }
-                else
-                {
-                    return Reader.ReadInt64();
-                }
-            }
+                return IsBigEndian ? Reader.ReadBytes(8).ReverseCopy().ToInt64() : Reader.ReadInt64();
         }
         public ushort ReadUInt16(int index = -2)
         {
@@ -249,31 +191,12 @@ namespace CirnoLib
             {
                 long Position = base.Position;
                 if (index >= 0) base.Position = index;
-                ushort value;
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(2).ReverseCopy(false);
-                    value = BitConverter.ToUInt16(buffer, 0);
-                }
-                else
-                {
-                    value = Reader.ReadUInt16();
-                }
+                ushort value = IsBigEndian ? Reader.ReadBytes(2).ReverseCopy().ToUInt16() : Reader.ReadUInt16();
                 base.Position = Position;
                 return value;
             }
             else
-            {
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(2).ReverseCopy(false);
-                    return BitConverter.ToUInt16(buffer, 0);
-                }
-                else
-                {
-                    return Reader.ReadUInt16();
-                }
-            }
+                return IsBigEndian ? Reader.ReadBytes(2).ReverseCopy().ToUInt16() : Reader.ReadUInt16();
         }
         public uint ReadUInt32(int index = -2)
         {
@@ -281,31 +204,12 @@ namespace CirnoLib
             {
                 long Position = base.Position;
                 if (index >= 0) base.Position = index;
-                uint value;
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(4).ReverseCopy(false);
-                    value = BitConverter.ToUInt32(buffer, 0);
-                }
-                else
-                {
-                    value = Reader.ReadUInt32();
-                }
+                uint value = IsBigEndian ? Reader.ReadBytes(4).ReverseCopy().ToUInt32() : Reader.ReadUInt32();
                 base.Position = Position;
                 return value;
             }
             else
-            {
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(4).ReverseCopy(false);
-                    return BitConverter.ToUInt32(buffer, 0);
-                }
-                else
-                {
-                    return Reader.ReadUInt32();
-                }
-            }
+                return IsBigEndian ? Reader.ReadBytes(4).ReverseCopy().ToUInt32() : Reader.ReadUInt32();
         }
         public ulong ReadUInt64(int index = -2)
         {
@@ -313,31 +217,12 @@ namespace CirnoLib
             {
                 long Position = base.Position;
                 if (index >= 0) base.Position = index;
-                ulong value;
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(8).ReverseCopy(false);
-                    value = BitConverter.ToUInt64(buffer, 0);
-                }
-                else
-                {
-                    value = Reader.ReadUInt64();
-                }
+                ulong value = IsBigEndian ? Reader.ReadBytes(8).ReverseCopy().ToUInt64() : Reader.ReadUInt64();
                 base.Position = Position;
                 return value;
             }
             else
-            {
-                if (IsBigEndian)
-                {
-                    byte[] buffer = Reader.ReadBytes(8).ReverseCopy(false);
-                    return BitConverter.ToUInt64(buffer, 0);
-                }
-                else
-                {
-                    return Reader.ReadUInt64();
-                }
-            }
+                return IsBigEndian ? Reader.ReadBytes(8).ReverseCopy().ToUInt64() : Reader.ReadUInt64();
         }
         public float ReadSingle(int index = -2)
         {
@@ -432,12 +317,12 @@ namespace CirnoLib
         public void Write(decimal value) => Writer.Write(value);
         public void Write(string value, bool IsNullTerminate = true)
         {
-            Writer.Write(Encoding.UTF8.GetBytes(value));
+            Writer.Write(value.GetBytes());
             if (IsNullTerminate) WriteByte(0);
         }
         public void Write(string value, int MaxLength)
         {
-            byte[] buffer = Encoding.UTF8.GetBytes(value);
+            byte[] buffer = value.GetBytes();
             if (buffer.Length > MaxLength)
                 Writer.Write(buffer.SubArray(0, MaxLength));
             else if (buffer.Length == MaxLength)
@@ -467,6 +352,7 @@ namespace CirnoLib
             base.Dispose(disposing);
         }
         public void Clear() => SetLength(0);
+        public void Skip(int Length) => Seek(Length, SeekOrigin.Current);
         public IParsable Parse(IParsable obj) => obj.Parse(ToArray());
     }
 }
