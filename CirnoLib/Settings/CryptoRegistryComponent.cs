@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Win32;
 
 namespace CirnoLib.Settings
@@ -22,19 +23,35 @@ namespace CirnoLib.Settings
         private readonly string CryptoKey;
         #endregion
 
+        #region public readonly bool UseCache
+        /// <summary>
+        /// 개체에 쓰기 전에 캐시에 먼저 담아둘 지의 여부를 결정합니다.
+        /// </summary>
+        public readonly bool UseCache;
+        #endregion
+
+        #region private Dictionary<string, object> Cache
+        /// <summary>
+        /// 개체에 쓰기 전에 담아두는 캐시 입니다.
+        /// </summary>
+        private Dictionary<string, object> Cache;
+        #endregion
+
         #region public CryptoRegistryComponent(string RootPath, string CryptoKey)
         /// <summary>
         /// 개체를 사용자가 제공하는 키를 루트로 초기화 합니다.
         /// </summary>
         /// <param name="RootPath">개체를 초기화할 루트 키 입니다.</param>
         /// <param name="CryptoKey">개체를 암복호화할 암호키 입니다.</param>
-        public CryptoRegistryComponent(string RootPath, string CryptoKey)
+        /// <param name="UseCache">개체에 쓰기 전에 캐시에 먼저 담아둘 지의 여부를 결정합니다.</param>
+        public CryptoRegistryComponent(string RootPath, string CryptoKey, bool UseCache)
         {
             if (string.IsNullOrEmpty(RootPath)) throw new ArgumentException("키가 제공되지 않았습니다.");
             this.CryptoKey = CryptoKey; // ?? throw new ArgumentNullException("암호키가 제공되지 않았습니다.");
-            string path = "Software\\" + RootPath;
+            string path = $"Software\\{RootPath}";
             RegistryKey key = Registry.CurrentUser.OpenSubKey(path, true);
             RootKey = key ?? Registry.CurrentUser.CreateSubKey(path, RegistryKeyPermissionCheck.ReadWriteSubTree);
+            if (this.UseCache = UseCache) Cache = new Dictionary<string, object>();
         }
         #endregion
 
@@ -44,6 +61,7 @@ namespace CirnoLib.Settings
         /// </summary>
         public void Clear()
         {
+            if (UseCache) Cache.Clear();
             foreach (var item in RootKey.GetSubKeyNames())
             {
                 RootKey.DeleteSubKeyTree(item, false);
@@ -55,6 +73,14 @@ namespace CirnoLib.Settings
         }
         #endregion
 
+        private void SetCache(string key, object value)
+        {
+            if (Cache.ContainsKey(key))
+                Cache[key] = value;
+            else
+                Cache.Add(key, value);
+        }
+
         #region public void DeleteValue(string key, string name)
         /// <summary>
         /// 지정된 값을 지정된 하위 키에서 삭제합니다.
@@ -64,18 +90,13 @@ namespace CirnoLib.Settings
         public void DeleteValue(string key, string name)
         {
             if (string.IsNullOrEmpty(key))
-            {
                 DeleteValue(name.HashSHA256());
-            }
             else
             {
+                if (UseCache) Cache.Remove($"{key}\\{name}");
                 using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
-                {
                     if (regKey != null)
-                    {
                         regKey.DeleteValue(name.HashSHA256(), false);
-                    }
-                }
             }
         }
         #endregion
@@ -84,7 +105,11 @@ namespace CirnoLib.Settings
         /// 지정된 값을 이 키에서 삭제합니다.
         /// </summary>
         /// <param name="name">삭제할 값의 이름입니다.</param>
-        public void DeleteValue(string name = null) => RootKey.DeleteValue(name.HashSHA256(), false);
+        public void DeleteValue(string name = null)
+        {
+            if (UseCache) Cache.Remove(name);
+            RootKey.DeleteValue(name.HashSHA256(), false);
+        }
         #endregion
 
         #region [    Get Value    ]
@@ -93,10 +118,10 @@ namespace CirnoLib.Settings
         private bool GetBoolean(RegistryKey key, string name, bool defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is bool && (bool)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is bool Bool && Bool == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (1 <= buffer.Length && buffer.Length <= 16)
                     return buffer.ToBoolean();
             }
@@ -113,12 +138,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public bool GetBoolean(string key, string name, bool defaultValue = false)
         {
-            if (string.IsNullOrEmpty(key)) return GetBoolean(RootKey, name, defaultValue, CryptoKey);
+            bool ret;
+            string path = null;
+            if (string.IsNullOrEmpty(key)) return GetBoolean(name, defaultValue);
+            else if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (bool)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetBoolean(regKey, name, defaultValue, CryptoKey);
+                ret = GetBoolean(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public bool GetBoolean(string name, bool defaultValue)
@@ -129,17 +159,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public bool GetBoolean(string name, bool defaultValue = false)
-            => GetBoolean(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (bool)Cache[name];
+            bool ret = GetBoolean(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static byte GetByte(RegistryKey key, string name, byte defaultValue, string CryptoKey)
         private static byte GetByte(RegistryKey key, string name, byte defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is byte && (byte)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is byte Byte && Byte == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (1 <= buffer.Length && buffer.Length <= 16)
                     return buffer[0];
             }
@@ -156,12 +191,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public byte GetByte(string key, string name, byte defaultValue = 0)
         {
-            if (string.IsNullOrEmpty(key)) return GetByte(RootKey, name, defaultValue, CryptoKey);
+            byte ret;
+            string path = null;
+            if (string.IsNullOrEmpty(key)) return GetByte(name, defaultValue);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (byte)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetByte(regKey, name, defaultValue, CryptoKey);
+                ret = GetByte(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public byte GetByte(string name, byte defaultValue)
@@ -172,7 +212,12 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public byte GetByte(string name, byte defaultValue = 0)
-            => GetByte(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (byte)Cache[name];
+            byte ret = GetByte(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static byte[] GetBytes(RegistryKey key, string name, byte[] defaultValue, string CryptoKey)
@@ -196,12 +241,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public byte[] GetBytes(string key, string name, byte[] defaultValue = null)
         {
+            byte[] ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetBytes(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (byte[])Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetBytes(regKey, name, defaultValue, CryptoKey);
+                ret = GetBytes(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public byte[] GetBytes(string name, byte[] defaultValue)
@@ -212,17 +262,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public byte[] GetBytes(string name, byte[] defaultValue = null)
-            => GetBytes(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (byte[])Cache[name];
+            byte[] ret = GetBytes(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static char GetChar(RegistryKey key, string name, char defaultValue, string CryptoKey)
         private static char GetChar(RegistryKey key, string name, char defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is char && (char)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is char Char && Char == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (2 <= buffer.Length && buffer.Length <= 17) 
                     return buffer.ToChar();
             }
@@ -239,12 +294,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public char GetChar(string key, string name, char defaultValue = '\0')
         {
+            char ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetChar(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (char)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetChar(regKey, name, defaultValue, CryptoKey);
+                ret = GetChar(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public char GetChar(string name, char defaultValue)
@@ -255,17 +315,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public char GetChar(string name, char defaultValue = '\0')
-            => GetChar(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (char)Cache[name];
+            char ret = GetChar(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static short GetInt16(RegistryKey key, string name, short defaultValue, string CryptoKey)
         private static short GetInt16(RegistryKey key, string name, short defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is short && (short)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is short Short && Short == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (2 <= buffer.Length && buffer.Length <= 17)
                     return buffer.ToInt16();
             }
@@ -282,12 +347,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public short GetInt16(string key, string name, short defaultValue = 0)
         {
+            short ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetInt16(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (short)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetInt16(regKey, name, defaultValue, CryptoKey);
+                ret = GetInt16(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public short GetInt16(string name, short defaultValue)
@@ -298,17 +368,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public short GetInt16(string name, short defaultValue = 0)
-            => GetInt16(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (short)Cache[name];
+            short ret = GetInt16(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static int GetInt32(RegistryKey key, string name, int defaultValue, string CryptoKey)
         private static int GetInt32(RegistryKey key, string name, int defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is int && (int)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is int Int && Int == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (4 <= buffer.Length && buffer.Length <= 19)
                     return buffer.ToInt32();
             }
@@ -325,12 +400,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public int GetInt32(string key, string name, int defaultValue = 0)
         {
+            int ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetInt32(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (int)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetInt32(regKey, name, defaultValue, CryptoKey);
+                ret = GetInt32(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public int GetInt32(string name, int defaultValue)
@@ -341,17 +421,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public int GetInt32(string name, int defaultValue = 0)
-            => GetInt32(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (int)Cache[name];
+            int ret = GetInt32(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static long GetInt64(RegistryKey key, string name, long defaultValue, string CryptoKey)
         private static long GetInt64(RegistryKey key, string name, long defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is long && (long)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is long Long && Long == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (8 <= buffer.Length && buffer.Length <= 23)
                     return buffer.ToInt32();
             }
@@ -368,12 +453,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public long GetInt64(string key, string name, long defaultValue = 0)
         {
+            long ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetInt64(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (long)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetInt64(regKey, name, defaultValue, CryptoKey);
+                ret = GetInt64(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public long GetInt64(string name, long defaultValue)
@@ -384,17 +474,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public long GetInt64(string name, long defaultValue = 0)
-            => GetInt64(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (long)Cache[name];
+            long ret = GetInt64(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static ushort GetUInt16(RegistryKey key, string name, ushort defaultValue, string CryptoKey)
         private static ushort GetUInt16(RegistryKey key, string name, ushort defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is ushort && (ushort)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is ushort UShort && UShort == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (2 <= buffer.Length && buffer.Length <= 17)
                     return buffer.ToUInt16();
             }
@@ -411,12 +506,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public ushort GetUInt16(string key, string name, ushort defaultValue = 0)
         {
+            ushort ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetUInt16(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (ushort)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetUInt16(regKey, name, defaultValue, CryptoKey);
+                ret = GetUInt16(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public ushort GetUInt16(string name, ushort defaultValue)
@@ -427,17 +527,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public ushort GetUInt16(string name, ushort defaultValue = 0)
-            => GetUInt16(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (ushort)Cache[name];
+            ushort ret = GetUInt16(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static uint GetUInt32(RegistryKey key, string name, uint defaultValue, string CryptoKey)
         private static uint GetUInt32(RegistryKey key, string name, uint defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is uint && (uint)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is uint UInt && UInt == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (4 <= buffer.Length && buffer.Length <= 19)
                     return buffer.ToUInt32();
             }
@@ -454,12 +559,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public uint GetUInt32(string key, string name, uint defaultValue = 0)
         {
+            uint ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetUInt32(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (uint)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetUInt32(regKey, name, defaultValue, CryptoKey);
+                ret = GetUInt32(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public uint GetUInt32(string name, uint defaultValue)
@@ -470,17 +580,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public uint GetUInt32(string name, uint defaultValue = 0)
-            => GetUInt32(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (uint)Cache[name];
+            uint ret = GetUInt32(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static ulong GetUInt64(RegistryKey key, string name, ulong defaultValue, string CryptoKey)
         private static ulong GetUInt64(RegistryKey key, string name, ulong defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is ulong && (ulong)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is ulong ULong && ULong == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (8 <= buffer.Length && buffer.Length <= 23)
                     return buffer.ToUInt32();
             }
@@ -497,12 +612,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public ulong GetUInt64(string key, string name, ulong defaultValue = 0)
         {
+            ulong ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetUInt64(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (ulong)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetUInt64(regKey, name, defaultValue, CryptoKey);
+                ret = GetUInt64(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public ulong GetUInt64(string name, ulong defaultValue)
@@ -513,17 +633,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public ulong GetUInt64(string name, ulong defaultValue = 0)
-            => GetUInt64(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (ulong)Cache[name];
+            ulong ret = GetUInt64(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static float GetSingle(RegistryKey key, string name, float defaultValue, string CryptoKey)
         private static float GetSingle(RegistryKey key, string name, float defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is float && (float)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is float Float && Float == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (4 <= buffer.Length && buffer.Length <= 19)
                     return buffer.ToSingle();
             }
@@ -540,12 +665,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public float GetSingle(string key, string name, float defaultValue = 0)
         {
+            float ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetSingle(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (float)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetSingle(regKey, name, defaultValue, CryptoKey);
+                ret = GetSingle(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public float GetSingle(string name, float defaultValue)
@@ -556,17 +686,22 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public float GetSingle(string name, float defaultValue = 0)
-            => GetSingle(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (float)Cache[name];
+            float ret = GetSingle(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static double GetDouble(RegistryKey key, string name, double defaultValue, string CryptoKey)
         private static double GetDouble(RegistryKey key, string name, double defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is double && (double)value == defaultValue) return defaultValue;
-            else if (value is byte[])
+            if (value is double Double && Double == defaultValue) return defaultValue;
+            else if (value is byte[] v)
             {
-                byte[] buffer = ((byte[])value).AES256Decrypt(CryptoKey);
+                byte[] buffer = v.AES256Decrypt(CryptoKey);
                 if (8 <= buffer.Length && buffer.Length <= 23)
                     return buffer.ToInt32();
             }
@@ -583,12 +718,17 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public double GetDouble(string key, string name, double defaultValue = 0)
         {
+            double ret;
+            string path = null;
             if (string.IsNullOrEmpty(key)) return GetDouble(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (double)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetDouble(regKey, name, defaultValue, CryptoKey);
+                ret = GetDouble(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public double GetDouble(string name, double defaultValue)
@@ -599,16 +739,21 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public double GetDouble(string name, double defaultValue = 0)
-            => GetDouble(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (double)Cache[name];
+            double ret = GetDouble(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #region private static string GetString(RegistryKey key, string name, string defaultValue, string CryptoKey)
         private static string GetString(RegistryKey key, string name, string defaultValue, string CryptoKey)
         {
             object value = key.GetValue(name.HashSHA256(), defaultValue);
-            if (value is string && (string)value == defaultValue) return defaultValue;
+            if (value is string String && String == defaultValue) return defaultValue;
             else if (value == null && defaultValue == null) return null;
-            else if (value is byte[]) return ((byte[])value).AES256Decrypt(CryptoKey).GetString();
+            else if (value is byte[] v) return v.AES256Decrypt(CryptoKey).GetString();
             else throw new InvalidCastException("암호화된 String 형식이 아닙니다.");
         }
         #endregion
@@ -622,12 +767,16 @@ namespace CirnoLib.Settings
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public string GetString(string key, string name, string defaultValue = "")
         {
+            string ret, path = null;
             if (string.IsNullOrEmpty(key)) return GetString(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache && Cache.ContainsKey(path = $"{key}\\{name}")) return (string)Cache[path];
             using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), false))
             {
                 if (regKey == null) return defaultValue;
-                return GetString(regKey, name, defaultValue, CryptoKey);
+                ret = GetString(regKey, name, defaultValue, CryptoKey);
             }
+            if (UseCache) SetCache(path, ret);
+            return ret;
         }
         #endregion
         #region public string GetString(string name, string defaultValue)
@@ -638,7 +787,12 @@ namespace CirnoLib.Settings
         /// <param name="defaultValue">Name 이 존재하지 않을 경우 반환하는 값 입니다.</param>
         /// <returns><paramref name="name"/> 의 값을 반환합니다. 존재하지 않을 경우 <paramref name="defaultValue"/> 의 값을 반환합니다.</returns>
         public string GetString(string name, string defaultValue = "")
-            => GetString(RootKey, name, defaultValue, CryptoKey);
+        {
+            if (UseCache && Cache.ContainsKey(name)) return (string)Cache[name];
+            string ret = GetString(RootKey, name, defaultValue, CryptoKey);
+            if (UseCache) SetCache(name, ret);
+            return ret;
+        }
         #endregion
 
         #endregion
@@ -654,9 +808,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, bool value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -671,7 +831,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, bool value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, byte value)
@@ -683,9 +846,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, byte value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = new byte[] { value }.Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -700,7 +869,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, byte value)
-            => RootKey.SetValue(name.HashSHA256(), new byte[] { value }.Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), new byte[] { value }.Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, byte[] value)
@@ -712,9 +884,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, byte[] value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -729,7 +907,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, byte[] value)
-            => RootKey.SetValue(name.HashSHA256(), value.AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, char value)
@@ -741,9 +922,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, char value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -758,7 +945,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, char value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, short value)
@@ -770,9 +960,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, short value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -787,7 +983,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, short value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, int value)
@@ -799,9 +998,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, int value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -816,7 +1021,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, int value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, long value)
@@ -828,9 +1036,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, long value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -845,7 +1059,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, long value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, ushort value)
@@ -857,9 +1074,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, ushort value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -874,7 +1097,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, ushort value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, uint value)
@@ -886,9 +1112,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, uint value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -903,7 +1135,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, uint value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, ulong value)
@@ -915,9 +1150,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, ulong value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -932,7 +1173,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, ulong value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, float value)
@@ -944,9 +1188,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, float value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -961,7 +1211,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, float value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, double value)
@@ -973,9 +1226,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, double value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -990,7 +1249,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, double value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().Append(new byte[0x10.GetRandom()].GetRandom()).AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #region public void SetValue(string key, string name, string value)
@@ -1002,9 +1264,15 @@ namespace CirnoLib.Settings
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string key, string name, string value)
         {
+            bool EmptyKey = string.IsNullOrEmpty(key);
+            if (UseCache)
+                if (EmptyKey)
+                    SetCache(name, value);
+                else
+                    SetCache($"{key}\\{name}", value);
             string hashedName = name.HashSHA256();
             byte[] encryptedValue = value.GetBytes().AES256Encrypt(CryptoKey);
-            if (string.IsNullOrEmpty(key)) RootKey.SetValue(hashedName, encryptedValue);
+            if (EmptyKey) RootKey.SetValue(hashedName, encryptedValue);
             else using (RegistryKey regKey = RootKey.OpenSubKey(key.HashSHA256(), true))
                     if (regKey == null)
                         using (RegistryKey genKey = RootKey.CreateSubKey(key.HashSHA256()))
@@ -1019,7 +1287,10 @@ namespace CirnoLib.Settings
         /// <param name="name">저장할 값의 이름입니다.</param>
         /// <param name="value">저장할 값입니다.</param>
         public void SetValue(string name, string value)
-            => RootKey.SetValue(name.HashSHA256(), value.GetBytes().AES256Encrypt(CryptoKey));
+        {
+            if (UseCache) SetCache(name, value);
+            RootKey.SetValue(name.HashSHA256(), value.GetBytes().AES256Encrypt(CryptoKey));
+        }
         #endregion
 
         #endregion
