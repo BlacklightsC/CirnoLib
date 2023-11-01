@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -10,12 +11,49 @@ namespace CirnoLib.Format
         public WTextString() : base(new IndexComparer()) { }
 
         public Element this[int index] {
-            get => this.ElementAt(index);
+            get {
+                if (Cache == null) Cache = this.ToArray<Element>();
+                return Cache[index];
+            }
         }
 
         public Element this[string strIndex] {
-            get => this.First(item => item.Index == int.Parse(strIndex.TrimStart('0')));
+            get {
+                if (strIndex == null || !strIndex.Contains("TRIGSTR_")) return null;
+                int index = int.Parse(strIndex.Substring(8));
+                if (Cache == null) Cache = this.ToArray<Element>();
+                if (Cache.Length > index && Cache[index].Index == index) return Cache[index];
+                for (int i = (index <= Cache.Length ? index : Cache.Length) - 1; i >= 0; i--)
+                    if (Cache[i].Index == index)
+                        return Cache[i];
+                return null;
+            }
         }
+
+        public Element[] Cache { get; set; }
+
+        public new bool Add(Element item)
+        {
+            Cache = null;
+            return base.Add(item);
+        }
+        public new bool Remove(Element item)
+        {
+            Cache = null;
+            return base.Remove(item);
+        }
+        public new int RemoveWhere(Predicate<Element> match)
+        {
+            Cache = null;
+            return base.RemoveWhere(match);
+        }
+        public new void Clear()
+        {
+            Cache = null;
+            base.Clear();
+        }
+
+        public string TryConvert(string strIndex) => this[strIndex]?.Text ?? strIndex;
 
         public static WTextString Parse(byte[] data) => Parse(data.GetString());
 

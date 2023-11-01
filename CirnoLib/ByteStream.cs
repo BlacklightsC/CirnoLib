@@ -8,8 +8,7 @@ namespace CirnoLib
         private readonly BinaryReader Reader;
         private readonly BinaryWriter Writer;
         private bool _IsBigEndian = !BitConverter.IsLittleEndian;
-        public bool IsBigEndian
-        {
+        public bool IsBigEndian {
             get => _IsBigEndian == BitConverter.IsLittleEndian;
             set => _IsBigEndian = value;
         }
@@ -290,7 +289,7 @@ namespace CirnoLib
         public byte Byte => ReadByte(-1);
         public char Char => ReadChar(-1);
         public bool Bool => ReadBoolean(-1);
-        public short Int16=> ReadInt16(-1);
+        public short Int16 => ReadInt16(-1);
         public int Int32 => ReadInt32(-1);
         public long Int64 => ReadInt64(-1);
         public ushort UInt16 => ReadUInt16(-1);
@@ -303,7 +302,18 @@ namespace CirnoLib
         #endregion
         #region [    Write    ]
         public void Write(sbyte value) => Writer.Write(value);
-        public void Write(params byte[] buffer) => Writer.Write(buffer);
+        public void Write(params byte[] buffer)
+        {
+            try
+            {
+                Writer.Write(buffer);
+            }
+            catch (OutOfMemoryException)
+            {
+                Capacity += buffer.Length;
+                Writer.Write(buffer);
+            }
+        }
         public void Write(params char[] chars) => Writer.Write(chars);
         public void Write(bool value) => Writer.Write(value);
         public void Write(short value) => Writer.Write(value);

@@ -136,6 +136,17 @@ namespace CirnoLib.Jass
             }
         }
 
+        public static string GetRawStringList(this int[] hashs)
+        {
+            StringBuilder Builder = new StringBuilder();
+            for (int i = 0; i < hashs.Length; i++)
+            {
+                if (i != 0) Builder.Append(',');
+                Builder.Append(hashs[i].GetRawString());
+            }
+            return Builder.ToString();
+        }
+
         //public static string ToInt(string Line, int RawSize = 4)
         //{
         //    StringBuilder Builder = new StringBuilder();

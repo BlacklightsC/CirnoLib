@@ -16,9 +16,24 @@ namespace CirnoLib.Format
             public float Top = 0;
             public string Name = string.Empty;
             public int Index = 0;
-            public byte[] Roll = new byte[4];
+            public int WeatherID = 0;           // RawCode
             public string AmbientSound = string.Empty;
             public byte[] Color = new byte[] { 0xFF, 0x80, 0x80 };
+        }
+
+        public Data Rect(string name, float minx, float miny, float maxx, float maxy)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            Data data = new Data
+            {
+                Name = name,
+                Left = minx,
+                Right = miny,
+                Bottom = maxx,
+                Top = maxy,
+            };
+            Add(data);
+            return data;
         }
 
         public static Region Parse(byte[] data)
@@ -38,7 +53,7 @@ namespace CirnoLib.Format
                         Top = bs.ReadSingle(),
                         Name = bs.ReadString(),
                         Index = bs.ReadInt32(),
-                        Roll = bs.ReadBytes(4),
+                        WeatherID = bs.ReadBytes(4).ReverseCopy(true).ToInt32(),
                         AmbientSound = bs.ReadString(),
                         Color = bs.ReadBytes(3)
                     });
@@ -62,7 +77,7 @@ namespace CirnoLib.Format
                     bs.Write(item.Top);
                     bs.Write(item.Name);
                     bs.Write(item.Index);
-                    bs.Write(item.Roll);
+                    bs.Write(item.WeatherID.GetBytes().ReverseCopy(true));
                     bs.Write(item.AmbientSound);
                     bs.Write(item.Color);
                     bs.WriteByte(0xFF);

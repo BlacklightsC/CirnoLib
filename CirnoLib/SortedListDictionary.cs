@@ -65,7 +65,7 @@ namespace CirnoLib
         public TKey FindKey(TValue value)
         {
             int index = FindIndex(value);
-            return index != -1 ? Keys.ToArray()[index] : default(TKey);
+            return index != -1 ? Keys.ToArray()[index] : default;
         }
 
         public int FindIndex(TValue value)

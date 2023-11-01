@@ -76,6 +76,7 @@ namespace CirnoLib.Format
 
         public enum Channels : int
         {
+            Unknown = -1,
             General = 0,
             UnitSelection = 1,
             UnitAcknowledgement = 2,
@@ -111,7 +112,7 @@ namespace CirnoLib.Format
             public float DistanceCutOff = 3000;
             public float ConeAnglesInside = 0;
             public float ConeAnglesOutside = 0;
-            public int ConeAnglesOutsizeVolume = 0x7F;
+            public int ConeAnglesOutsideVolume = 0x7F;
             public float ConeOrientationX = 0;
             public float ConeOrientationY = 0;
             public float ConeOrientationZ = 0;
@@ -130,11 +131,44 @@ namespace CirnoLib.Format
                 DistanceCutOff = 0;
                 ConeAnglesInside = 0;
                 ConeAnglesOutside = 0;
-                ConeAnglesOutsizeVolume = 0;
+                ConeAnglesOutsideVolume = 0;
                 ConeOrientationX = 0;
                 ConeOrientationY = 0;
                 ConeOrientationZ = 0;
             }
+
+            public void SetInternalSound()
+            {
+                Volume = -1;
+                Pitch = 4294967296f;
+                Unknown1 = 4294967296f;
+                Unknown2 = -1;
+                Channel = Channels.Unknown;
+                MinDistance = 4294967296f;
+                MaxDistance = 4294967296f;
+                DistanceCutOff = 4294967296f;
+                ConeAnglesInside = 4294967296f;
+                ConeAnglesOutside = 4294967296f;
+                ConeAnglesOutsideVolume = -1;
+                ConeOrientationX = 4294967296f;
+                ConeOrientationY = 4294967296f;
+                ConeOrientationZ = 4294967296f;
+            }
+        }
+
+        public Data CreateSound(string name, string fileName, bool looping, bool is3D, bool stopwhenoutofrange, int fadeInRate, int fadeOutRate, string eaxSetting)
+        {
+            Data data = new Data
+            {
+                VariableName = name,
+                FilePath = fileName,
+                Flags = (looping ? Flag.Looping : 0) | (is3D ? Flag.Sound3D : 0) | (stopwhenoutofrange ? Flag.StopWhenOutOfRange : 0) | Flag.Default,
+                FadeInRate = fadeInRate,
+                FadeOutRate = fadeOutRate,
+                EAXEffect = eaxSetting
+            };
+            Add(data);
+            return data;
         }
 
         public static Sound Parse(byte[] data)
@@ -163,7 +197,7 @@ namespace CirnoLib.Format
                         DistanceCutOff = bs.ReadSingle(),
                         ConeAnglesInside = bs.ReadSingle(),
                         ConeAnglesOutside = bs.ReadSingle(),
-                        ConeAnglesOutsizeVolume = bs.ReadInt32(),
+                        ConeAnglesOutsideVolume = bs.ReadInt32(),
                         ConeOrientationX = bs.ReadSingle(),
                         ConeOrientationY = bs.ReadSingle(),
                         ConeOrientationZ = bs.ReadSingle()
@@ -196,7 +230,7 @@ namespace CirnoLib.Format
                     bs.Write(item.DistanceCutOff);
                     bs.Write(item.ConeAnglesInside);
                     bs.Write(item.ConeAnglesOutside);
-                    bs.Write(item.ConeAnglesOutsizeVolume);
+                    bs.Write(item.ConeAnglesOutsideVolume);
                     bs.Write(item.ConeOrientationX);
                     bs.Write(item.ConeOrientationY);
                     bs.Write(item.ConeOrientationZ);

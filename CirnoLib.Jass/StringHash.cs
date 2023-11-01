@@ -24,7 +24,7 @@
 
             // Set up the internal state
             len = length;
-            a = b = 0x9e3779b9; // the golden ratio; an arbitrary value
+            a = b = 0x9E3779B9; // the golden ratio; an arbitrary value
             c = initval;        // the previous hash value
 
             //---------------------------------------- handle most of the key
@@ -74,7 +74,7 @@
 
         public static int StrHash(this string text)
         {
-            return StrHash(text.GetBytes());
+            return StrHash(System.Text.Encoding.UTF8.GetBytes(text));
         }
         public static int StrHash(this byte[] array)
         {

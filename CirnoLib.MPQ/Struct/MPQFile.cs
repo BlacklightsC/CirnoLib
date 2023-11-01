@@ -261,8 +261,8 @@ namespace CirnoLib.MPQ.Struct
             _File = Decompress(_File);
             Block.Flags ^= MPQ_FILE_COMPRESS;
         }
-        public byte[] Decompress(byte[] data) => Decompress(data, Files.SectorSize, Block.FSize);
-        public static byte[] Decompress(byte[] data, int SectorSize, uint FileSize = 0)
+        public byte[] Decompress(byte[] data) => Decompress(data, (uint)Files.SectorSize, Block.FSize);
+        public static byte[] Decompress(byte[] data, uint SectorSize, uint FileSize = 0)
         {
             int Start = BitConverter.ToInt32(data, 0);
             int End = BitConverter.ToInt32(data, 4);
@@ -280,7 +280,7 @@ namespace CirnoLib.MPQ.Struct
                     {
                         Buffer = data.SubArray(Start, data.Length - Start);
                     }
-                    byte[] Sector = DecompressType(Buffer, FileSize);
+                    byte[] Sector = DecompressType(Buffer, ms.Length + SectorSize < FileSize ? SectorSize : (FileSize - (uint)ms.Length));
                     ms.Write(Sector, 0, Sector.Length);
                     Start = End;
                     try
@@ -301,7 +301,7 @@ namespace CirnoLib.MPQ.Struct
             byte[] Compressed = data.SubArray(1);
             switch (data[0])
             {
-                default: return new byte[0];
+                default: return data;
                 case 0x01: return Huffman.Decompress(Compressed);
                 case 0x02: return ZLibHelper.Inflate(Compressed);
                 case 0x08: return PKWARE.DecompressBlock(Compressed, 0, Compressed.Length, new byte[fileSize]);
@@ -309,6 +309,9 @@ namespace CirnoLib.MPQ.Struct
                 case 0x80: return IMA_ADPCM.Decompress(Compressed, 2);
                 case 0x41:
                     Compressed = Huffman.Decompress(Compressed);
+
+
+
                     return IMA_ADPCM.Decompress(Compressed, 1);
                 case 0x48:
                     Compressed = PKWARE.DecompressBlock(Compressed, 0, Compressed.Length, new byte[fileSize]);

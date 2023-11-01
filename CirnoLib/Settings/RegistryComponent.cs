@@ -24,7 +24,7 @@ namespace CirnoLib.Settings
         {
             if (string.IsNullOrEmpty(RootPath))
                 throw new NotImplementedException("키가 제공되지 않았습니다.");
-            string path = "Software\\" + RootPath;
+            string path = $"Software\\{RootPath}";
             RegistryKey key = Registry.CurrentUser.OpenSubKey(path, true);
             RootKey = key ?? Registry.CurrentUser.CreateSubKey(path, RegistryKeyPermissionCheck.ReadWriteSubTree);
         }

@@ -31,33 +31,33 @@ namespace CirnoLib.Jass
         #endregion
 
         #region [    Math API    ]
-        public static double Deg2Rad(double degrees) => Math.PI * degrees / 180.0;
-        public static double Rad2Deg(double radians) => radians * (180.0 / Math.PI);
+        public static float Deg2Rad(float degrees) => (float)Math.PI * degrees / 180.0f;
+        public static float Rad2Deg(float radians) => radians * (180.0f / (float)Math.PI);
 
-        public static double Sin(double radians) => Math.Sin(radians);
-        public static double Cos(double radians) => Math.Cos(radians);
-        public static double Tan(double radians) => Math.Tan(radians);
+        public static float Sin(float radians) => (float)Math.Sin(radians);
+        public static float Cos(float radians) => (float)Math.Cos(radians);
+        public static float Tan(float radians) => (float)Math.Tan(radians);
 
         // Expect values between -1 and 1...returns 0 for invalid input
-        public static double Asin(double y) => Math.Asin(y);
-        public static double Acos(double x) => Math.Acos(x);
-        public static double Atan(double x) => Math.Atan(x);
+        public static float Asin(float y) => (float)Math.Asin(y);
+        public static float Acos(float x) => (float)Math.Acos(x);
+        public static float Atan(float x) => (float)Math.Atan(x);
 
         // Returns 0 if x and y are both 0
-        public static double Atan2(double y, double x) => Math.Atan2(y, x);
+        public static float Atan2(float y, float x) => (float)Math.Atan2(y, x);
 
         // Returns 0 if x <= 0
-        public static double SquareRoot(double x) => Math.Sqrt(x);
+        public static float SquareRoot(float x) => (float)Math.Sqrt(x);
 
         // computes x to the y power
         // y == 0.0             => 1
         // x == 0.0 and y < 0   => 0
-        public static double Pow(double x, double power) => Math.Pow(x, power);
+        public static float Pow(float x, float power) => (float)Math.Pow(x, power);
         #endregion
 
         #region [    String Utility API    ]
-        public static double I2R(int i) => Convert.ToDouble(i);
-        public static int R2I(double r)
+        public static float I2R(int i) => Convert.ToSingle(i);
+        public static int R2I(float r)
         {
             if (r > int.MaxValue) return int.MaxValue;
             if (r < int.MinValue) return int.MinValue;
@@ -65,10 +65,11 @@ namespace CirnoLib.Jass
             return (int)r;
         }
         public static string I2S(int i) => i.ToString();
-        public static string R2S(double r) => r.ToString();
-        //public static string R2SW(double r, int width, int precision)
+        public static string R2S(float r) => r.ToString();
+        //public static string R2SW(float r, int width, int precision)
+        
         public static int S2I(string s) => int.TryParse(s, out int result) ? result : 0;
-        public static double S2R(string s) => double.TryParse(s, out double result) ? result : 0;
+        public static float S2R(string s) => float.TryParse(s, out float result) ? result : 0;
         public static string SubString(string source, int start, int end)
         {
             if (start < 0) start = 0;
@@ -82,13 +83,13 @@ namespace CirnoLib.Jass
         #endregion
 
         #region [    Region and Location API    ]
-        public static rect Rect(double minx, double miny, double maxx, double maxy)
+        public static rect Rect(float minx, float miny, float maxx, float maxy)
             => new rect { minx = minx, miny = miny, maxx = maxx, maxy = maxy };
         public static rect RectFromLoc(location min, location max)
             => Rect(min.x, min.y, max.x, max.y);
         public static void RemoveRect(rect whichRect) 
             => whichRect.minx = whichRect.miny = whichRect.maxx = whichRect.maxy = 0;
-        public static void SetRect(rect whichRect, double minx, double miny, double maxx, double maxy)
+        public static void SetRect(rect whichRect, float minx, float miny, float maxx, float maxy)
         {
             whichRect.minx = minx;
             whichRect.miny = miny;
@@ -97,10 +98,10 @@ namespace CirnoLib.Jass
         }
         public static void SetRectFromLoc(rect whichRect, location min, location max)
             => SetRect(whichRect, min.x, min.y, max.x, max.y);
-        public static void MoveRectTo(rect whichRect, double newCenterX, double newCenterY)
+        public static void MoveRectTo(rect whichRect, float newCenterX, float newCenterY)
         {
-            double halfWidth = (whichRect.maxx - whichRect.minx) / 2;
-            double halfHeight = (whichRect.maxy - whichRect.miny) / 2;
+            float halfWidth = (whichRect.maxx - whichRect.minx) / 2;
+            float halfHeight = (whichRect.maxy - whichRect.miny) / 2;
             whichRect.minx = newCenterX - halfWidth;
             whichRect.maxx = newCenterX + halfWidth;
             whichRect.miny = newCenterY - halfHeight;
@@ -109,25 +110,25 @@ namespace CirnoLib.Jass
         public static void MoveRectToLoc(rect whichRect, location newCenter)
             => MoveRectTo(whichRect, newCenter.x, newCenter.y);
 
-        public static double GetRectCenterX(rect whichRect) 
+        public static float GetRectCenterX(rect whichRect) 
             => (whichRect.maxx - whichRect.minx) / 2 + whichRect.minx;
-        public static double GetRectCenterY(rect whichRect)
+        public static float GetRectCenterY(rect whichRect)
             => (whichRect.maxy - whichRect.miny) / 2 + whichRect.miny;
-        public static double GetRectMinX(rect whichRect) => whichRect.minx;
-        public static double GetRectMinY(rect whichRect) => whichRect.miny;
-        public static double GetRectMaxX(rect whichRect) => whichRect.maxx;
-        public static double GetRectMaxY(rect whichRect) => whichRect.maxy;
+        public static float GetRectMinX(rect whichRect) => whichRect.minx;
+        public static float GetRectMinY(rect whichRect) => whichRect.miny;
+        public static float GetRectMaxX(rect whichRect) => whichRect.maxx;
+        public static float GetRectMaxY(rect whichRect) => whichRect.maxy;
 
-        public static location Location(double x, double y) => new location { x = x, y = y };
+        public static location Location(float x, float y) => new location { x = x, y = y };
         public static void RemoveLocation(location whichLocation)
             => whichLocation.x = whichLocation.y = 0;
-        public static void MoveLocation(location whichLocation, double newX, double newY)
+        public static void MoveLocation(location whichLocation, float newX, float newY)
         {
             whichLocation.x = newX;
             whichLocation.y = newY;
         }
-        public static double GetLocationX(location whichLocation) => whichLocation.x;
-        public static double GetLocationY(location whichLocation) => whichLocation.y;
+        public static float GetLocationX(location whichLocation) => whichLocation.x;
+        public static float GetLocationY(location whichLocation) => whichLocation.y;
         #endregion
 
         #region [    Dialog API    ]
@@ -140,7 +141,7 @@ namespace CirnoLib.Jass
             if (parent.ContainsKey(childKey)) parent.Remove(childKey);
             parent.Add(childKey, value);
         }
-        public static void SaveReal(Hashtable table, int parentKey, int childKey, double value)
+        public static void SaveReal(Hashtable table, int parentKey, int childKey, float value)
         {
             if (!table.ContainsKey(parentKey)) table.Add(parentKey, new Hashtable());
             if (!(table[parentKey] is Hashtable parent)) return;
@@ -171,14 +172,14 @@ namespace CirnoLib.Jass
             || parent[childKey].GetType() != typeof(int)) return 0;
             return (int)parent[childKey];
         }
-        public static double LoadReal(Hashtable table, int parentKey, int childKey)
+        public static float LoadReal(Hashtable table, int parentKey, int childKey)
         {
             if (table == null
             || !table.ContainsKey(parentKey)
             || !(table[parentKey] is Hashtable parent)
             || !parent.ContainsKey(childKey)
-            || parent[childKey].GetType() != typeof(double)) return 0;
-            return (double)parent[childKey];
+            || parent[childKey].GetType() != typeof(float)) return 0;
+            return (float)parent[childKey];
         }
         public static bool LoadBoolean(Hashtable table, int parentKey, int childKey)
         {
@@ -213,7 +214,7 @@ namespace CirnoLib.Jass
             || !table.ContainsKey(parentKey)
             || !(table[parentKey] is Hashtable parent)
             || !parent.ContainsKey(childKey)
-            || parent[childKey].GetType() != typeof(double)) return false;
+            || parent[childKey].GetType() != typeof(float)) return false;
             return true;
         }
         public static bool HaveSavedBoolean(Hashtable table, int parentKey, int childKey)
@@ -251,7 +252,7 @@ namespace CirnoLib.Jass
             || !table.ContainsKey(parentKey)
             || !(table[parentKey] is Hashtable parent)
             || !parent.ContainsKey(childKey)
-            || parent[childKey].GetType() != typeof(double)) return;
+            || parent[childKey].GetType() != typeof(float)) return;
             parent.Remove(childKey);
             if (parent.Count == 0) table.Remove(parentKey);
         }
@@ -289,7 +290,7 @@ namespace CirnoLib.Jass
 
         #region [    Randomization API    ]
         public static int GetRandomInt(int lowBound, int highBound) => lowBound.GetRandom(Math.Abs(lowBound - highBound) + 1);
-        public static double GetRandomReal(double lowBound, double highBound) => new double().GetRandom() * Math.Abs(lowBound - highBound) + lowBound;
+        public static float GetRandomReal(float lowBound, float highBound) => (float)new double().GetRandom() * Math.Abs(lowBound - highBound) + lowBound;
         #endregion
 
         #region [    Visual API    ]
@@ -298,7 +299,7 @@ namespace CirnoLib.Jass
 
         #region [    Preload    ]
         public static void Preload(string filename) => _Preload?.WriteLine(filename);
-        public static void PreloadEnd(double timeout) { }
+        public static void PreloadEnd(float timeout) { }
 
         public static void PreloadStart() { }
         public static void PreloadRefresh() { }
@@ -324,34 +325,34 @@ namespace CirnoLib.Jass
 
         #region [    Constants    ]
         // Misc constants
-        public const double bj_PI = 3.14159;
-        public const double bj_E = 2.71828;
-        public const double bj_CELLWIDTH = 128.0;
-        public const double bj_CLIFFHEIGHT = 128.0;
-        public const double bj_UNIT_FACING = 270.0;
-        public const double bj_RADTODEG = 180.0 / bj_PI;
-        public const double bj_DEGTORAD = bj_PI / 180.0;
-        public const double bj_TEXT_DELAY_QUEST = 20.00;
-        public const double bj_TEXT_DELAY_QUESTUPDATE = 20.00;
-        public const double bj_TEXT_DELAY_QUESTDONE = 20.00;
-        public const double bj_TEXT_DELAY_QUESTFAILED = 20.00;
-        public const double bj_TEXT_DELAY_QUESTREQUIREMENT = 20.00;
-        public const double bj_TEXT_DELAY_MISSIONFAILED = 20.00;
-        public const double bj_TEXT_DELAY_ALWAYSHINT = 12.00;
-        public const double bj_TEXT_DELAY_HINT = 12.00;
-        public const double bj_TEXT_DELAY_SECRET = 10.00;
-        public const double bj_TEXT_DELAY_UNITACQUIRED = 15.00;
-        public const double bj_TEXT_DELAY_UNITAVAILABLE = 10.00;
-        public const double bj_TEXT_DELAY_ITEMACQUIRED = 10.00;
-        public const double bj_TEXT_DELAY_WARNING = 12.00;
-        public const double bj_QUEUE_DELAY_QUEST = 5.00;
-        public const double bj_QUEUE_DELAY_HINT = 5.00;
-        public const double bj_QUEUE_DELAY_SECRET = 3.00;
-        public const double bj_HANDICAP_EASY = 60.00;
-        public const double bj_GAME_STARTED_THRESHOLD = 0.01;
-        public const double bj_WAIT_FOR_COND_MIN_INTERVAL = 0.10;
-        public const double bj_POLLED_WAIT_INTERVAL = 0.10;
-        public const double bj_POLLED_WAIT_SKIP_THRESHOLD = 2.00;
+        public const float bj_PI = 3.14159f;
+        public const float bj_E = 2.71828f;
+        public const float bj_CELLWIDTH = 128.0f;
+        public const float bj_CLIFFHEIGHT = 128.0f;
+        public const float bj_UNIT_FACING = 270.0f;
+        public const float bj_RADTODEG = 180.0f / bj_PI;
+        public const float bj_DEGTORAD = bj_PI / 180.0f;
+        public const float bj_TEXT_DELAY_QUEST = 20.0f;
+        public const float bj_TEXT_DELAY_QUESTUPDATE = 20.0f;
+        public const float bj_TEXT_DELAY_QUESTDONE = 20.0f;
+        public const float bj_TEXT_DELAY_QUESTFAILED = 20.0f;
+        public const float bj_TEXT_DELAY_QUESTREQUIREMENT = 20.0f;
+        public const float bj_TEXT_DELAY_MISSIONFAILED = 20.0f;
+        public const float bj_TEXT_DELAY_ALWAYSHINT = 12.0f;
+        public const float bj_TEXT_DELAY_HINT = 12.0f;
+        public const float bj_TEXT_DELAY_SECRET = 10.0f;
+        public const float bj_TEXT_DELAY_UNITACQUIRED = 15.0f;
+        public const float bj_TEXT_DELAY_UNITAVAILABLE = 10.0f;
+        public const float bj_TEXT_DELAY_ITEMACQUIRED = 10.0f;
+        public const float bj_TEXT_DELAY_WARNING = 12.0f;
+        public const float bj_QUEUE_DELAY_QUEST = 5.0f;
+        public const float bj_QUEUE_DELAY_HINT = 5.0f;
+        public const float bj_QUEUE_DELAY_SECRET = 3.0f;
+        public const float bj_HANDICAP_EASY = 60.0f;
+        public const float bj_GAME_STARTED_THRESHOLD = 0.01f;
+        public const float bj_WAIT_FOR_COND_MIN_INTERVAL = 0.1f;
+        public const float bj_POLLED_WAIT_INTERVAL = 0.1f;
+        public const float bj_POLLED_WAIT_SKIP_THRESHOLD = 2.0f;
 
         // Game constants
         public const int bj_MAX_INVENTORY = 6;
@@ -366,8 +367,8 @@ namespace CirnoLib.Jass
 
         // Ideally these would be looked up from Units/MiscData.txt,
         // but there is currently no script functionality exposed to do that
-        public const double bj_TOD_DAWN = 6.00;
-        public const double bj_TOD_DUSK = 18.00;
+        public const float bj_TOD_DAWN = 6.0f;
+        public const float bj_TOD_DUSK = 18.0f;
 
         // Melee game settings:
         //   - Starting Time of Day (TOD)
@@ -378,7 +379,7 @@ namespace CirnoLib.Jass
         //   - Max heroes allowed per hero type
         //   - Distance from start loc to search for nearby mines
         //
-        public const double bj_MELEE_STARTING_TOD = 8.00;
+        public const float bj_MELEE_STARTING_TOD = 8.0f;
         public const int bj_MELEE_STARTING_GOLD_V0 = 750;
         public const int bj_MELEE_STARTING_GOLD_V1 = 500;
         public const int bj_MELEE_STARTING_LUMBER_V0 = 200;
@@ -386,19 +387,19 @@ namespace CirnoLib.Jass
         public const int bj_MELEE_STARTING_HERO_TOKENS = 1;
         public const int bj_MELEE_HERO_LIMIT = 3;
         public const int bj_MELEE_HERO_TYPE_LIMIT = 1;
-        public const double bj_MELEE_MINE_SEARCH_RADIUS = 2000;
-        public const double bj_MELEE_CLEAR_UNITS_RADIUS = 1500;
-        public const double bj_MELEE_CRIPPLE_TIMEOUT = 120.00;
-        public const double bj_MELEE_CRIPPLE_MSG_DURATION = 20.00;
+        public const float bj_MELEE_MINE_SEARCH_RADIUS = 2000;
+        public const float bj_MELEE_CLEAR_UNITS_RADIUS = 1500;
+        public const float bj_MELEE_CRIPPLE_TIMEOUT = 120.0f;
+        public const float bj_MELEE_CRIPPLE_MSG_DURATION = 20.0f;
         public const int bj_MELEE_MAX_TWINKED_HEROES_V0 = 3;
         public const int bj_MELEE_MAX_TWINKED_HEROES_V1 = 1;
 
         // Delay between a creep's death and the time it may drop an item.
-        public const double bj_CREEP_ITEM_DELAY = 0.50;
+        public const float bj_CREEP_ITEM_DELAY = 0.5f;
 
         // Timing settings for Marketplace inventories.
-        public const double bj_STOCK_RESTOCK_INITIAL_DELAY = 120;
-        public const double bj_STOCK_RESTOCK_INTERVAL = 30;
+        public const float bj_STOCK_RESTOCK_INITIAL_DELAY = 120;
+        public const float bj_STOCK_RESTOCK_INTERVAL = 30;
         public const int bj_STOCK_MAX_ITERATIONS = 20;
 
         // Max events registered by a single "dest dies in region" event.
@@ -414,47 +415,47 @@ namespace CirnoLib.Jass
         public const int bj_CAMERA_DEFAULT_ROTATION = 90;
 
         // Rescue
-        public const double bj_RESCUE_PING_TIME = 2.00;
+        public const float bj_RESCUE_PING_TIME = 2.0f;
 
         // Transmission behavior settings
-        public const double bj_NOTHING_SOUND_DURATION = 5.00;
-        public const double bj_TRANSMISSION_PING_TIME = 1.00;
+        public const float bj_NOTHING_SOUND_DURATION = 5.0f;
+        public const float bj_TRANSMISSION_PING_TIME = 1.0f;
         public const int bj_TRANSMISSION_IND_RED = 255;
         public const int bj_TRANSMISSION_IND_BLUE = 255;
         public const int bj_TRANSMISSION_IND_GREEN = 255;
         public const int bj_TRANSMISSION_IND_ALPHA = 255;
-        public const double bj_TRANSMISSION_PORT_HANGTIME = 1.50;
+        public const float bj_TRANSMISSION_PORT_HANGTIME = 1.5f;
 
         // Cinematic mode settings
-        public const double bj_CINEMODE_INTERFACEFADE = 0.50;
+        public const float bj_CINEMODE_INTERFACEFADE = 0.5f;
 
         // Cinematic mode volume levels
-        public const double bj_CINEMODE_VOLUME_UNITMOVEMENT = 0.40;
-        public const double bj_CINEMODE_VOLUME_UNITSOUNDS = 0.00;
-        public const double bj_CINEMODE_VOLUME_COMBAT = 0.40;
-        public const double bj_CINEMODE_VOLUME_SPELLS = 0.40;
-        public const double bj_CINEMODE_VOLUME_UI = 0.00;
-        public const double bj_CINEMODE_VOLUME_MUSIC = 0.55;
-        public const double bj_CINEMODE_VOLUME_AMBIENTSOUNDS = 1.00;
-        public const double bj_CINEMODE_VOLUME_FIRE = 0.60;
+        public const float bj_CINEMODE_VOLUME_UNITMOVEMENT = 0.4f;
+        public const float bj_CINEMODE_VOLUME_UNITSOUNDS = 0.0f;
+        public const float bj_CINEMODE_VOLUME_COMBAT = 0.4f;
+        public const float bj_CINEMODE_VOLUME_SPELLS = 0.4f;
+        public const float bj_CINEMODE_VOLUME_UI = 0.0f;
+        public const float bj_CINEMODE_VOLUME_MUSIC = 0.55f;
+        public const float bj_CINEMODE_VOLUME_AMBIENTSOUNDS = 1.0f;
+        public const float bj_CINEMODE_VOLUME_FIRE = 0.6f;
 
         // Speech mode volume levels
-        public const double bj_SPEECH_VOLUME_UNITMOVEMENT = 0.25;
-        public const double bj_SPEECH_VOLUME_UNITSOUNDS = 0.00;
-        public const double bj_SPEECH_VOLUME_COMBAT = 0.25;
-        public const double bj_SPEECH_VOLUME_SPELLS = 0.25;
-        public const double bj_SPEECH_VOLUME_UI = 0.00;
-        public const double bj_SPEECH_VOLUME_MUSIC = 0.55;
-        public const double bj_SPEECH_VOLUME_AMBIENTSOUNDS = 1.00;
-        public const double bj_SPEECH_VOLUME_FIRE = 0.60;
+        public const float bj_SPEECH_VOLUME_UNITMOVEMENT = 0.25f;
+        public const float bj_SPEECH_VOLUME_UNITSOUNDS = 0.0f;
+        public const float bj_SPEECH_VOLUME_COMBAT = 0.25f;
+        public const float bj_SPEECH_VOLUME_SPELLS = 0.25f;
+        public const float bj_SPEECH_VOLUME_UI = 0.0f;
+        public const float bj_SPEECH_VOLUME_MUSIC = 0.55f;
+        public const float bj_SPEECH_VOLUME_AMBIENTSOUNDS = 1.0f;
+        public const float bj_SPEECH_VOLUME_FIRE = 0.6f;
 
         // Smart pan settings
-        public const double bj_SMARTPAN_TRESHOLD_PAN = 500;
-        public const double bj_SMARTPAN_TRESHOLD_SNAP = 3500;
+        public const float bj_SMARTPAN_TRESHOLD_PAN = 500;
+        public const float bj_SMARTPAN_TRESHOLD_SNAP = 3500;
 
         // QueuedTriggerExecute settings
         public const int bj_MAX_QUEUED_TRIGGERS = 100;
-        public const double bj_QUEUED_TRIGGER_TIMEOUT = 180.00;
+        public const float bj_QUEUED_TRIGGER_TIMEOUT = 180.0f;
 
         // Campaign indexing constants
         public const int bj_CAMPAIGN_INDEX_T = 0;
@@ -683,9 +684,9 @@ namespace CirnoLib.Jass
         public const int bj_GATEOPERATION_DESTROY = 2;
 
         // Game cache value types
-        public const int bj_GAMECACHE_bool = 0;
-        public const int bj_GAMECACHE_int = 1;
-        public const int bj_GAMECACHE_double = 2;
+        public const int bj_GAMECACHE_BOOLEAN = 0;
+        public const int bj_GAMECACHE_INTEGER = 1;
+        public const int bj_GAMECACHE_REAL = 2;
         public const int bj_GAMECACHE_UNIT = 3;
         public const int bj_GAMECACHE_STRING = 4;
 
@@ -715,7 +716,7 @@ namespace CirnoLib.Jass
         public const int bj_MINIMAPPINGSTYLE_ATTACK = 2;
 
         // Corpse creation settings
-        public const double bj_CORPSE_MAX_DEATH_TIME = 8.00;
+        public const float bj_CORPSE_MAX_DEATH_TIME = 8.0f;
 
         // Corpse creation styles
         public const int bj_CORPSETYPE_FLESH = 0;
@@ -750,37 +751,37 @@ namespace CirnoLib.Jass
         #endregion
 
         #region [    Math Utility Functions    ]
-        public static double RMinBJ(double a, double b) => a < b ? a : b;
-        public static double RMaxBJ(double a, double b) => a < b ? b : a;
-        public static double RAbsBJ(double a) => a >= 0 ? a : -a;
-        public static double RSignBJ(double a) => a >= 0 ? 1 : -1;
+        public static float RMinBJ(float a, float b) => a < b ? a : b;
+        public static float RMaxBJ(float a, float b) => a < b ? b : a;
+        public static float RAbsBJ(float a) => a >= 0 ? a : -a;
+        public static float RSignBJ(float a) => a >= 0 ? 1 : -1;
         public static int IMinBJ(int a, int b) => a < b ? a : b;
         public static int IMaxBJ(int a, int b) => a < b ? b : a;
         public static int IAbsBJ(int a) => a >= 0 ? a : -a;
         public static int ISignBJ(int a) => a >= 0 ? 1 : -1;
-        public static double SinBJ(double degrees) => Sin(degrees * bj_DEGTORAD);
-        public static double CosBJ(double degrees) => Cos(degrees * bj_DEGTORAD);
-        public static double TanBJ(double degrees) => Tan(degrees * bj_DEGTORAD);
-        public static double AsinBJ(double degrees) => Asin(degrees) * bj_RADTODEG;
-        public static double AcosBJ(double degrees) => Acos(degrees) * bj_RADTODEG;
-        public static double AtanBJ(double degrees) => Atan(degrees) * bj_RADTODEG;
-        public static double Atan2BJ(double y, double x) => Atan2(y, x) * bj_RADTODEG;
-        public static double AngleBetweenPoints(location locA, location locB)
+        public static float SinBJ(float degrees) => Sin(degrees * bj_DEGTORAD);
+        public static float CosBJ(float degrees) => Cos(degrees * bj_DEGTORAD);
+        public static float TanBJ(float degrees) => Tan(degrees * bj_DEGTORAD);
+        public static float AsinBJ(float degrees) => Asin(degrees) * bj_RADTODEG;
+        public static float AcosBJ(float degrees) => Acos(degrees) * bj_RADTODEG;
+        public static float AtanBJ(float degrees) => Atan(degrees) * bj_RADTODEG;
+        public static float Atan2BJ(float y, float x) => Atan2(y, x) * bj_RADTODEG;
+        public static float AngleBetweenPoints(location locA, location locB)
             => bj_RADTODEG * Atan2(GetLocationY(locB) - GetLocationY(locA), GetLocationX(locB) - GetLocationX(locA));
-        public static double DistanceBetweenPoints(location locA, location locB)
+        public static float DistanceBetweenPoints(location locA, location locB)
         {
-            double dx = GetLocationX(locB) - GetLocationX(locA);
-            double dy = GetLocationY(locB) - GetLocationY(locA);
+            float dx = GetLocationX(locB) - GetLocationX(locA);
+            float dy = GetLocationY(locB) - GetLocationY(locA);
             return SquareRoot(dx * dx + dy * dy);
         }
-        public static location PolarProjectionBJ(location source, double dist, double angle)
+        public static location PolarProjectionBJ(location source, float dist, float angle)
         {
-            double x = GetLocationX(source) + dist * Cos(angle * bj_DEGTORAD);
-            double y = GetLocationY(source) + dist * Sin(angle * bj_DEGTORAD);
+            float x = GetLocationX(source) + dist * Cos(angle * bj_DEGTORAD);
+            float y = GetLocationY(source) + dist * Sin(angle * bj_DEGTORAD);
             return Location(x, y);
         }
-        public static double GetRandomDirectionDeg() => GetRandomReal(0, 360);
-        public static double GetRandomPercentageBJ() => GetRandomReal(0, 100);
+        public static float GetRandomDirectionDeg() => GetRandomReal(0, 360);
+        public static float GetRandomPercentageBJ() => GetRandomReal(0, 100);
         public static location GetRandomLocInRect(rect whichRect)
             => Location(GetRandomReal(GetRectMinX(whichRect), GetRectMaxX(whichRect)), GetRandomReal(GetRectMinY(whichRect), GetRectMaxY(whichRect)));
 
@@ -799,26 +800,26 @@ namespace CirnoLib.Jass
         //===========================================================================
         // Calculate the modulus/remainder of (dividend) divided by (divisor).
         // Examples:  13.000 mod 2.500 = 0.500.  -6.000 mod 2.500 = 1.500.
-        public static double ModuloReal(double dividend, double divisor)
+        public static float ModuloReal(float dividend, float divisor)
         {
-            double modulus = dividend - I2R(R2I(dividend / divisor)) * divisor;
+            float modulus = dividend - I2R(R2I(dividend / divisor)) * divisor;
             // If the dividend was negative, the above modulus calculation will
             // be negative, but within (-divisor..0).  We can add (divisor) to
             // shift this result into the desired range of (0..divisor).
             return modulus < 0 ? modulus + divisor : modulus;
         }
 
-        public static location OffsetLocation(location loc, double dx, double dy)
+        public static location OffsetLocation(location loc, float dx, float dy)
             => Location(GetLocationX(loc) + dx, GetLocationY(loc) + dy);
-        public static rect OffsetRectBJ(rect r, double dx, double dy)
+        public static rect OffsetRectBJ(rect r, float dx, float dy)
             => Rect(GetRectMinX(r) + dx, GetRectMinY(r) + dy, GetRectMaxX(r) + dx, GetRectMaxY(r) + dy);
-        public static rect RectFromCenterSizeBJ(location center, double width, double height)
+        public static rect RectFromCenterSizeBJ(location center, float width, float height)
         {
-            double x = GetLocationX(center);
-            double y = GetLocationY(center);
-            return Rect(x - width * 0.5, y - height * 0.5, x + width * 0.5, y + height * 0.5);
+            float x = GetLocationX(center);
+            float y = GetLocationY(center);
+            return Rect(x - width * 0.5f, y - height * 0.5f, x + width * 0.5f, y + height * 0.5f);
         }
-        public static bool RectContainsCoords(rect r, double x, double y)
+        public static bool RectContainsCoords(rect r, float x, float y)
             => (GetRectMinX(r) <= x) && (x <= GetRectMaxX(r)) && (GetRectMinY(r) <= y) && (y <= GetRectMaxY(r));
         public static bool RectContainsLoc(rect r, location loc)
             => RectContainsCoords(r, GetLocationX(loc), GetLocationY(loc));
@@ -832,23 +833,23 @@ namespace CirnoLib.Jass
         //===========================================================================
         // Converts a percentage (real, 0..100) into a scaled integer (0..max),
         // clipping the result to 0..max in case the input is invalid.
-        public static int PercentToInt(double percentage, int max)
+        public static int PercentToInt(float percentage, int max)
         {
-            int result = R2I(percentage * I2R(max) * 0.01);
+            int result = R2I(percentage * I2R(max) * 0.01f);
             if (result < 0) return 0;
             else if (result > max) return max;
             return result;
         }
-        public static int PercentTo255(double percentage)
+        public static int PercentTo255(float percentage)
             => PercentToInt(percentage, 255);
         public static bool CompareLocationsBJ(location A, location B)
             => GetLocationX(A) == GetLocationX(B) && GetLocationY(A) == GetLocationY(B);
         public static bool CompareRectsBJ(rect A, rect B)
             => GetRectMinX(A) == GetRectMinX(B) && GetRectMinY(A) == GetRectMinY(B) && GetRectMaxX(A) == GetRectMaxX(B) && GetRectMaxY(A) == GetRectMaxY(B);
-        public static rect GetRectFromCircleBJ(location center, double radius)
+        public static rect GetRectFromCircleBJ(location center, float radius)
         {
-            double centerX = GetLocationX(center);
-            double centerY = GetLocationY(center);
+            float centerX = GetLocationX(center);
+            float centerY = GetLocationY(center);
             return Rect(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
         }
         #endregion
@@ -863,18 +864,18 @@ namespace CirnoLib.Jass
         //===========================================================================
         // Scale the font size linearly such that size 10 equates to height 0.023.
         // Screen-relative font heights are harder to grasp and than font sizes.
-        public static double TextTagSize2Height(double size) => size * 0.023 / 10;
+        public static float TextTagSize2Height(float size) => size * 0.023f / 10;
 
         //===========================================================================
         // Scale the speed linearly such that speed 128 equates to 0.071.
         // Screen-relative speeds are hard to grasp.
-        public static double TextTagSpeed2Velocity(double speed) => speed * 0.071 / 128;
+        public static float TextTagSpeed2Velocity(float speed) => speed * 0.071f / 128;
         #endregion
 
         #region [    Rescuable Unit Utility Functions    ]
         public static Hashtable InitHashtableBJ() => bj_lastCreatedHashtable = InitHashtable();
         public static Hashtable GetLastCreatedHashtableBJ() => bj_lastCreatedHashtable;
-        public static void SaveRealBJ(double value, int key, int missionKey, Hashtable table)
+        public static void SaveRealBJ(float value, int key, int missionKey, Hashtable table)
             => SaveReal(table, missionKey, key, value);
         public static void SaveIntegerBJ(int value, int key, int missionKey, Hashtable table)
             => SaveInteger(table, missionKey, key, value);
@@ -882,7 +883,7 @@ namespace CirnoLib.Jass
             => SaveBoolean(table, missionKey, key, value);
         public static void SaveStringBJ(string value, int key, int missionKey, Hashtable table)
             => SaveStr(table, missionKey, key, value);
-        public static double LoadRealBJ(int key, int missionKey, Hashtable table)
+        public static float LoadRealBJ(int key, int missionKey, Hashtable table)
             => LoadReal(table, missionKey, key);
         public static int LoadIntegerBJ(int key, int missionKey, Hashtable table)
             => LoadInteger(table, missionKey, key);
@@ -913,12 +914,12 @@ namespace CirnoLib.Jass
         #region [    Miscellaneous Utility Functions    ]
         public static location GetRectCenter(rect whichRect)
             => Location(GetRectCenterX(whichRect), GetRectCenterY(whichRect));
-        public static int GetFadeFromSeconds(double seconds)
+        public static int GetFadeFromSeconds(float seconds)
             => seconds == 0 ? 10000 : 128 / R2I(seconds);
-        public static double GetFadeFromSecondsAsReal(double seconds)
+        public static float GetFadeFromSecondsAsReal(float seconds)
             => seconds == 0 ? 10000 : 128 / seconds;
-        public static double GetRectWidthBJ(rect r) => GetRectMaxX(r) - GetRectMinX(r);
-        public static double GetRectHeightBJ(rect r) => GetRectMaxY(r) - GetRectMinY(r);
+        public static float GetRectWidthBJ(rect r) => GetRectMaxX(r) - GetRectMinX(r);
+        public static float GetRectHeightBJ(rect r) => GetRectMaxY(r) - GetRectMinY(r);
         #endregion
 
         #endregion
@@ -926,11 +927,11 @@ namespace CirnoLib.Jass
 
     public class rect
     {
-        public double minx, miny, maxx, maxy;
+        public float minx, miny, maxx, maxy;
     }
 
     public class location
     {
-        public double x, y;
+        public float x, y;
     }
 }

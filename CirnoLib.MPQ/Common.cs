@@ -23,7 +23,7 @@ namespace CirnoLib.MPQ
                     }
 
             return cryptTable;
-        }
+        } 
 
         #region [    Hash String    ]
         public static uint HashString(this string Text, uint HashType)
@@ -112,7 +112,7 @@ namespace CirnoLib.MPQ
             if (SectorSize < 8) throw new KeyNotFoundException("섹터의 크기는 8바이트 이상이여야 합니다.");
             if (data == null) throw new ArgumentNullException("파일은 null이 될 수 없습니다.");
 
-            uint Decrypted0 = (((FileSize - 1) / SectorSize) + 2) * 4;
+            uint Decrypted0 = ((FileSize - 1) / SectorSize + 2) * 4;
             uint Decrypted1 = Decrypted0 + SectorSize;
             uint[] EncryptedData = new uint[2];
 

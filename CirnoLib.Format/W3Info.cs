@@ -104,18 +104,40 @@ namespace CirnoLib.Format
             public int ID;
         }
 
-        public byte[] RandomThingsData;
-        //public List<RandomUnitTable> RandomUnitTableList = new List<RandomUnitTable>();
-        //public sealed class RandomUnitTable : List<RandomUnitTable.Group>
-        //{
-        //    public sealed class Group
-        //    {
-        //        public int Number;
-        //        public string Name;
+        public List<RandomUnitTable> RandomUnitTableList = new List<RandomUnitTable>();
+        public sealed class RandomUnitTable
+        {
+            int Number;
+            string Name;
+            List<Group> GroupList = new List<Group>();
+            public sealed class Group : List<UnitData>
+            {
+                private int _Columns;
+                public int Columns
+                {
+                    get => _Columns;
+                    set {
+                        if (value > 0)
+                        _Columns = value;
+                        //TODO
+                    }
+                }
+            }
+            public sealed class UnitData : List<int> { int Chance; }
+        }
 
-
-        //    }
-        //}
+        public List<RandomItemTable> RandomItemTableList = new List<RandomItemTable>();
+        public sealed class RandomItemTable
+        {
+            int Number;
+            string Name;
+            List<List<ItemData>> ItemSetList = new List<List<ItemData>>();
+            public sealed class ItemData
+            {
+                int Chance;
+                int ItemID;
+            }
+        }
 
         public static W3Info Parse(byte[] data)
         {
@@ -163,6 +185,7 @@ namespace CirnoLib.Format
                 w3i.CustomWaterTintingGreen = bs.ReadByte();
                 w3i.CustomWaterTintingBlue = bs.ReadByte();
                 w3i.CustomWaterTintingAlpha = bs.ReadByte();
+                if (bs.Byte == 0xFF) return w3i;
                 int LoopCount = bs.ReadInt32();
                 for (int i = 0; i < LoopCount; i++)
                 {
@@ -178,6 +201,7 @@ namespace CirnoLib.Format
                     p.AllyHighPrioritiesFlags = bs.ReadInt32();
                     w3i.PlayerList.Add(p);
                 }
+                if (bs.Byte == 0xFF) return w3i;
                 LoopCount = bs.ReadInt32();
                 for (int i = 0; i < LoopCount; i++)
                 {
@@ -189,6 +213,7 @@ namespace CirnoLib.Format
                     };
                     w3i.ForceList.Add(f);
                 }
+                if (bs.Byte == 0xFF) return w3i;
                 LoopCount = bs.ReadInt32();
                 for (int i = 0; i < LoopCount; i++)
                 {
@@ -201,6 +226,7 @@ namespace CirnoLib.Format
                     };
                     w3i.UpgradeChangeList.Add(uc);
                 }
+                if (bs.Byte == 0xFF) return w3i;
                 LoopCount = bs.ReadInt32();
                 for (int i = 0; i < LoopCount; i++)
                 {
@@ -211,7 +237,7 @@ namespace CirnoLib.Format
                     };
                     w3i.TechChangeList.Add(tc);
                 }
-                w3i.RandomThingsData = data.SubArray((int)bs.Position);
+                //w3i.RandomThingsData = data.SubArray((int)bs.Position);
             }
             return w3i;
         }
@@ -294,7 +320,18 @@ namespace CirnoLib.Format
                     bs.Write(item.PlayerFlags);
                     bs.Write(item.ID.ReverseByte());
                 }
-                bs.Write(RandomThingsData);
+                bs.Write(RandomUnitTableList.Count);
+                foreach (var item in RandomUnitTableList)
+                {
+                    //bs.Write(item.PlayerFlags);
+                    //bs.Write(item.ID.ReverseByte());
+                }
+                bs.Write(RandomItemTableList.Count);
+                foreach (var item in RandomItemTableList)
+                {
+                    //bs.Write(item.PlayerFlags);
+                    //bs.Write(item.ID.ReverseByte());
+                }
 
                 return bs.ToArray();
             }

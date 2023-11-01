@@ -69,21 +69,12 @@ namespace CirnoLib.Format
             //10 - Compressed RGB Image
             //11 - Compressed Black & White Image
 
-            if ((imageType > 11) || ((imageType > 3) && (imageType < 9)))
-            {
-                throw new ApplicationException("This image type (" + imageType + ") is not supported.");
-            }
+            if (imageType > 11 || imageType > 3 && imageType < 9)
+                throw new ApplicationException($"This image type ({imageType}) is not supported.");
             else if (bitsPerPixel != 8 && bitsPerPixel != 15 && bitsPerPixel != 16 && bitsPerPixel != 24 && bitsPerPixel != 32)
-            {
-                throw new ApplicationException("Number of bits per pixel (" + bitsPerPixel + ") is not supported.");
-            }
-            if (colorMap > 0)
-            {
-                if (bitsPerColorMap != 15 && bitsPerColorMap != 16 && bitsPerColorMap != 24 && bitsPerColorMap != 32)
-                {
-                    throw new ApplicationException("Number of bits per color map (" + bitsPerPixel + ") is not supported.");
-                }
-            }
+                throw new ApplicationException($"Number of bits per pixel ({bitsPerPixel}) is not supported.");
+            if (colorMap > 0 && bitsPerColorMap != 15 && bitsPerColorMap != 16 && bitsPerColorMap != 24 && bitsPerColorMap != 32)
+                throw new ApplicationException($"Number of bits per color map ({bitsPerPixel}) is not supported.");
 
             byte[] bmpData = new byte[imgWidth * 4 * imgHeight];
 

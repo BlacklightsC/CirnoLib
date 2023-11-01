@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace CirnoLib.Jass
 {
@@ -68,19 +69,26 @@ namespace CirnoLib.Jass
 
     public sealed class JassVariableList : List<JassVariable>
     {
-        public JassVariable this[string name] { get => Find(item => item.Name == name); }
+        public JassVariable this[string name] => Find(item => item.Name == name);
+    }
+
+    public sealed class JassNative
+    {
+
     }
 
     public sealed class JassFunction
     {
+        public bool Native = false;
         public string Name;
         public JassVariableList TakesVariable = new JassVariableList();
         public string ReturnType;
         public JassVariableList LocalVariable = new JassVariableList();
         public List<string> Lines = new List<string>();
 
-        public JassFunction(string Name, string ReturnType)
+        public JassFunction(string Name, string ReturnType, bool Native = false)
         {
+            this.Native = Native;
             this.Name = Name;
             this.ReturnType = ReturnType;
         }
@@ -95,8 +103,9 @@ namespace CirnoLib.Jass
         public string[] ToStringArray()
         {
             List<string> Lines = new List<string>();
-            StringBuilder Builder = new StringBuilder("function ");
-            Builder.AppendFormat("{0} takes ", Name);
+            StringBuilder Builder = new StringBuilder();
+            Builder.Append(Native ? "native" : "function");
+            Builder.AppendFormat(" {0} takes ", Name);
             if (TakesVariable.Count > 0)
                 for (int i = 0; i < TakesVariable.Count; i++)
                     Builder.AppendFormat("{0} {1}{2}", TakesVariable[i].Type,
@@ -104,10 +113,13 @@ namespace CirnoLib.Jass
             else Builder.Append("nothing ");
             Builder.AppendFormat("returns {0}", ReturnType);
             Lines.Add(Builder.ToString());
-            foreach (var item in LocalVariable)
-                Lines.Add(string.Format("local {0}", item.ToString()));
-            Lines.AddRange(this.Lines);
-            Lines.Add("endfunction");
+            if (!Native)
+            {
+                foreach (var item in LocalVariable)
+                    Lines.Add($"local {item}");
+                Lines.AddRange(this.Lines);
+                Lines.Add("endfunction");
+            }
             return Lines.ToArray();
         }
 
@@ -119,30 +131,32 @@ namespace CirnoLib.Jass
         public static JassFunction Parse(string[] script)
         {
             string[] initLine = script[0].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            JassFunction function = new JassFunction(initLine[1], initLine[initLine.Length - 1]);
+            JassFunction function = new JassFunction(initLine[1], initLine[initLine.Length - 1], initLine[0] == "native");
             int takesIndex = script[0].IndexOf("takes") + 6;
             initLine = script[0].Substring(takesIndex, script[0].LastIndexOf("return") - takesIndex).Replace(',', ' ').Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (string.Compare(initLine[0], "nothing", true) != 0)
+            if (!initLine[0].Equals("nothing"))
             {
                 for (int i = 0; i < initLine.Length; i += 2)
                     function.TakesVariable.Add(new JassVariable(initLine[i], initLine[i + 1]));
             }
-
-            int CurrentLine = 1;
-            for (; CurrentLine < script.Length; CurrentLine++)
+            if (!function.Native)
             {
-                if (script[CurrentLine].Length < 5 || string.Compare(script[CurrentLine].Substring(0, 5), "local", true) != 0) break;
-                function.LocalVariable.Add(JassVariable.Parse(script[CurrentLine].Substring(6, script[CurrentLine].Length - 6)));
+                int CurrentLine = 1;
+                for (; CurrentLine < script.Length; CurrentLine++)
+                {
+                    if (script[CurrentLine].Length < 5 || !script[CurrentLine].Substring(0, 5).Equals("local")) break;
+                    function.LocalVariable.Add(JassVariable.Parse(script[CurrentLine].Substring(6, script[CurrentLine].Length - 6)));
+                }
+                while (!script[CurrentLine].Trim().Equals("endfunction"))
+                    function.Lines.Add(script[CurrentLine++]);
             }
-            while (string.Compare(script[CurrentLine], "endfunction", true) != 0)
-                function.Lines.Add(script[CurrentLine++]);
             return function;
         }
     }
 
     public sealed class JassFunctionList : List<JassFunction>
     {
-        public JassFunction this[string name] { get => Find(item => item.Name == name); }
+        public JassFunction this[string name] => Find(item => item.Name == name);
     }
 
     public sealed class JassDocument
@@ -188,11 +202,11 @@ namespace CirnoLib.Jass
             {
                 if (!IsGlobalFound)
                 {
-                    if (string.Compare(Lines[CurrentLine], "globals", true) == 0)
+                    if (Lines[CurrentLine].Equals("globals"))
                         IsGlobalFound = true;
                     continue;
                 }
-                if (string.Compare(Lines[CurrentLine], "endglobals", true) == 0)
+                if (Lines[CurrentLine].Equals("endglobals"))
                 {
                     CurrentLine++;
                     break;
@@ -202,18 +216,25 @@ namespace CirnoLib.Jass
             List<string> FunctionLines = new List<string>();
             for (; CurrentLine < Lines.Count; CurrentLine++)
             {
-                if (Lines[CurrentLine].Length < 8 || string.Compare(Lines[CurrentLine].Substring(0, 8), "function", true) != 0) continue;
-                do FunctionLines.Add(Lines[CurrentLine]);
-                while (string.Compare(Lines[CurrentLine++], "endfunction", true) != 0);
-                CurrentLine--;
-                document.Functions.Add(JassFunction.Parse(FunctionLines.ToArray()));
-                FunctionLines.Clear();
+                string prefix = Lines[CurrentLine].Trim().Split(' ')[0];
+                if (prefix.Length < 6) continue;
+                switch (prefix)
+                {
+                    case "native":
+                        document.Functions.Add(JassFunction.Parse(Lines[CurrentLine].Trim()));
+                        break;
+                    case "function":
+                        do FunctionLines.Add(Lines[CurrentLine].Trim());
+                        while (!Lines[CurrentLine++].Trim().Equals("endfunction"));
+                        CurrentLine--;
+                        document.Functions.Add(JassFunction.Parse(FunctionLines.ToArray()));
+                        FunctionLines.Clear();
+                        break;
+                }
                 if (CurrentLine >= Lines.Count) break;
             }
             return document;
         }
-
-
 
         public override string ToString() => ToString(true);
 
@@ -223,9 +244,11 @@ namespace CirnoLib.Jass
             bool stringMode = false;
             string IndentText = string.Empty.PadLeft(Interval);
             StringBuilder Builder = new StringBuilder();
-            foreach (var item in ToStringArray())
+            string[] lines = ToStringArray();
+            for (int i = 0; i < lines.Length; i++)
             {
-                switch (item)
+                var item = lines[i].Trim();
+                switch (item.Split(' ')[0].Split('/')[0])
                 {
                     case "endglobals":
                     case "endloop":
@@ -243,17 +266,56 @@ namespace CirnoLib.Jass
                     Builder.Append(IndentText);
                     Indented++;
                 }
-                Builder.AppendLine(item);
+                if ((Regex.Matches(item, "\"").Count - (Regex.Matches(item, "\\\\\"").Count - Regex.Matches(item, "\\\\\\\\\"").Count)) % 2 == 1)stringMode = !stringMode;
+                if (stringMode) Builder.Append(item + "\\n");
+                else Builder.AppendLine(item);
                 if (Indent && item == "endfunction") Builder.AppendLine();
-                if (item == "globals"
-                 || item == "loop"
+                if (item.IndexOf("globals") == 0
+                 || item.IndexOf("loop") == 0
                  || item.IndexOf("if") == 0
                  || item.IndexOf("function") == 0
                  || item.IndexOf("library") == 0
-                 || item.IndexOf("scope") == 0)
+                 || item.IndexOf("scope") == 0
+                 || item.IndexOf("static if") == 0)
                     IndentLevel++;
             }
-            return Builder.ToString();
+            string ret = Builder.ToString();
+            if (Indent)
+            {
+                ret = Regex.Replace(ret, "(\r\n +)else\\1endif", item => $"{item.Groups[1].Value}endif");
+                ret = Regex.Replace(ret, " ?== ?true", string.Empty);
+                ret = Regex.Replace(ret, "([^0-9])(\\.[0-9])", item => $"{item.Groups[1].Value}0{item.Groups[2].Value}");
+                ret = Regex.Replace(ret, "([0-9]\\.)([^0-9a-zA-Z])", item => $"{item.Groups[1].Value}0{item.Groups[2].Value}");
+                ret = Regex.Replace(ret, "\\$([0-9a-fA-F]+)", item =>
+                {
+                    int value = 0;
+                    string rawcode = null;
+                    try
+                    {
+                        value = Convert.ToInt32(item.Groups[1].Value, 16);
+                        try
+                        {
+                            rawcode = value.GetRawString();
+                        }
+                        catch
+                        {
+                            goto Error;
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine(item.Groups[1].Value);
+                        return item.Value;
+                    }
+
+
+                    if (Regex.IsMatch(rawcode, "[0-9A-Za-z]{4}"))
+                        return $"'{rawcode}'";
+                    Error: return item.Groups[1].Value.Length >= 8 ? $"0x{item.Groups[1].Value}" : value.ToString();
+                });
+                ret = Regex.Replace(ret, "'([^+])'", item => ((int)item.Groups[1].Value[0]).ToString());
+            }
+            return ret;
         }
 
         public string[] ToStringArray()

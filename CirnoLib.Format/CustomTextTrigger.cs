@@ -32,8 +32,13 @@ namespace CirnoLib.Format
             {
                 using (ByteStream bs = new ByteStream())
                 {
-                    bs.Write(Length);
-                    bs.Write(value);
+                    if (string.IsNullOrEmpty(value))
+                        bs.Write(0);
+                    else
+                    {
+                        bs.Write(Length);
+                        bs.Write(value);
+                    }
                     return bs.ToArray();
                 }
             }
@@ -41,20 +46,31 @@ namespace CirnoLib.Format
             public override string ToString() => value;
         }
 
-        public static CustomTextTrigger Parse(byte[] data)
+        public static CustomTextTrigger Parse(byte[] data, bool isReforged = false)
         {
             CustomTextTrigger wct = new CustomTextTrigger();
             using (ByteStream bs = new ByteStream(data))
             {
+                if (isReforged) bs.Skip(4);
                 bs.Skip(4);
                 wct.Comment = bs.ReadString();
-                bs.Skip(4);
-                wct.HeadScript = bs.ReadString();
-                int Count = bs.ReadInt32();
-                for (int i = 0; i < Count; i++)
+                if (isReforged)
                 {
-                    bs.Skip(4);
-                    wct.Add(bs.ReadString());
+                    bs.ReadInt32();
+                    while (bs.Length - bs.Position > 5)
+                    {
+                        bs.Skip(4);
+                        string str = bs.ReadString();
+                        if (string.IsNullOrEmpty(str)) continue;
+                        wct.Add(str);
+                    }
+                }
+                else
+                {
+                    wct.HeadScript = bs.ReadBytes(bs.ReadInt32()).GetString().TrimEnd('\0');
+                    int Count = bs.ReadInt32();
+                    for (int i = 0; i < Count; i++)
+                        wct.Add(bs.ReadBytes(bs.ReadInt32()).GetString().TrimEnd('\0'));
                 }
             }
             return wct;

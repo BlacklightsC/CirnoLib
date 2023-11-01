@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // 이러한 특성 값을 변경하세요.
 [assembly: AssemblyTitle("CirnoLib.Format - 워크래프트 확장자 모듈")]
 [assembly: AssemblyProduct("Cirno 라이브러리 모듈")]
-[assembly: AssemblyCopyright("Copyright © 2018 - 2020 BlacklightsC")]
+[assembly: AssemblyCopyright("Copyright © 2018 - 2023 BlacklightsC")]
 
 // ComVisible을 false로 설정하면 이 어셈블리의 형식이 COM 구성 요소에 
 // 표시되지 않습니다. COM에서 이 어셈블리의 형식에 액세스하려면

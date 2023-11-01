@@ -22,7 +22,7 @@ namespace CirnoLib.Format
             public float CoordX = 0;
             public float CoordY = 0;
             public float CoordZ = 0;
-            public float RotateAngle = 0;
+            public float RotateAngle = 270f;
             public float ScaleX = 1;
             public float ScaleY = 1;
             public float ScaleZ = 1;
@@ -112,25 +112,41 @@ namespace CirnoLib.Format
                 CoordX = x,
                 CoordY = y,
                 RotateAngle = face,
+                Level = 1,
                 CreationNumber = number
             };
 
             Add(unit);
             return unit;
         }
-        public Data CreateItem(string itemid, float x, float y)
-           => CreateItem(itemid.Numberize(), x, y);
-        public Data CreateItem(int itemid, float x, float y)
+        public Data CreateItem(string itemid, float x, float y, int number = -1)
+           => CreateItem(itemid.Numberize(), x, y, number);
+        public Data CreateItem(int itemid, float x, float y, int number = -1)
         {
             Data item = new Data
             {
+                PlayerNumber = 15,
                 TypeID = itemid,
                 CoordX = x,
-                CoordY = y
+                CoordY = y,
+                CreationNumber = number
             };
 
             Add(item);
             return item;
+        }
+
+        public void DefineStartLocation(int player, float x, float y, int number = -1)
+        {
+            Add(new Data
+            {
+                PlayerNumber = player,
+                variation = player,
+                TypeID = 1936486243,
+                CoordX = x,
+                CoordY = y,
+                CreationNumber = number
+            });
         }
 
         public void PurgeNumber()
@@ -162,7 +178,7 @@ namespace CirnoLib.Format
                     d.CoordX = bs.ReadSingle();
                     d.CoordY = bs.ReadSingle();
                     d.CoordZ = bs.ReadSingle();
-                    d.RotateAngle = bs.ReadSingle();
+                    d.RotateAngle = Function.Rad2Deg(bs.ReadSingle());
                     d.ScaleX = bs.ReadSingle();
                     d.ScaleY = bs.ReadSingle();
                     d.ScaleZ = bs.ReadSingle();
@@ -190,7 +206,7 @@ namespace CirnoLib.Format
                         if (ItemTable != null) d.DropItemSet.Add(ItemTable);
                     }
                     d.Gold = bs.ReadInt32();
-                    d.Target = bs.ReadInt32();
+                    d.Target = bs.ReadSingle();
                     d.Level = bs.ReadInt32();
                     d.STR = bs.ReadInt32();
                     d.AGI = bs.ReadInt32();
@@ -265,7 +281,7 @@ namespace CirnoLib.Format
                     bs.Write(item.CoordX);
                     bs.Write(item.CoordY);
                     bs.Write(item.CoordZ);
-                    bs.Write(item.RotateAngle);
+                    bs.Write(Function.Deg2Rad(item.RotateAngle));
                     bs.Write(item.ScaleX);
                     bs.Write(item.ScaleY);
                     bs.Write(item.ScaleZ);
